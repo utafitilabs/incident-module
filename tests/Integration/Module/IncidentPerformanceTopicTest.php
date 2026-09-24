@@ -179,7 +179,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        $kpis = $this->kpis(PerformanceScope::organisation());
+        $kpis = $this->kpis(PerformanceScope::organization());
 
         self::assertSame([
             IncidentPerformanceTopic::FILED,
@@ -205,7 +205,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        self::assertArrayNotHasKey(IncidentPerformanceTopic::CLAIMS_OPEN, $this->kpis(PerformanceScope::organisation()));
+        self::assertArrayNotHasKey(IncidentPerformanceTopic::CLAIMS_OPEN, $this->kpis(PerformanceScope::organization()));
         self::assertContains(
             IncidentPerformanceTopic::COMPENSATION_CLAIMS,
             array_map(static fn (MatrixColumn $column): string => $column->key, IncidentPerformanceTopic::columns()),
@@ -237,10 +237,10 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        self::assertSame(3.0, $this->kpis(PerformanceScope::organisation())[IncidentPerformanceTopic::FILED]->value);
+        self::assertSame(3.0, $this->kpis(PerformanceScope::organization())[IncidentPerformanceTopic::FILED]->value);
         self::assertSame(
             'across 2 departments that read Incidents',
-            $this->kpis(PerformanceScope::organisation())[IncidentPerformanceTopic::FILED]->caption,
+            $this->kpis(PerformanceScope::organization())[IncidentPerformanceTopic::FILED]->caption,
         );
     }
 
@@ -249,7 +249,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        $median = $this->kpis(PerformanceScope::organisation())[IncidentPerformanceTopic::MEDIAN_DAYS_TO_CLOSE];
+        $median = $this->kpis(PerformanceScope::organization())[IncidentPerformanceTopic::MEDIAN_DAYS_TO_CLOSE];
 
         self::assertFalse($median->isKnown());
         self::assertSame('nothing finished in this period', $median->caption);
@@ -268,7 +268,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
 
         self::assertSame(
             ['Ecology', 'Protection Service'],
-            array_keys($this->rows(PerformanceScope::organisation())),
+            array_keys($this->rows(PerformanceScope::organization())),
         );
     }
 
@@ -281,7 +281,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        $rows = $this->rows(PerformanceScope::organisation());
+        $rows = $this->rows(PerformanceScope::organization());
 
         self::assertSame('Org-wide', $rows['Ecology']->band);
         self::assertSame('EC', $rows['Ecology']->mark, 'The mark comes from the directory, not from this module.');
@@ -303,7 +303,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
         $world = $this->world();
         $this->reading('Community Development', $world['module'], $world['north']);
 
-        $rows = $this->rows(PerformanceScope::organisation());
+        $rows = $this->rows(PerformanceScope::organization());
 
         self::assertEquals(
             $rows['Protection Service']->cells,
@@ -314,7 +314,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
 
     /**
      * A SCOPE NARROWS BOTH ENDS: the figures read that area's records, and the
-     * rows are that area's departments plus the organisation-wide ones — with
+     * rows are that area's departments plus the organization-wide ones — with
      * an org-wide department now reading only the page's area.
      */
     public function testAnAreaScopeNarrowsTheFiguresAndTheRowSet(): void
@@ -339,7 +339,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        $filed = $this->kpis(PerformanceScope::organisation())[IncidentPerformanceTopic::FILED];
+        $filed = $this->kpis(PerformanceScope::organization())[IncidentPerformanceTopic::FILED];
 
         // Installed 10 June: March, April and May are holes; June and July are
         // measured and genuinely nought.
@@ -353,7 +353,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        $filed = $this->kpis(PerformanceScope::organisation(), self::period('2026-07-19 09:00:00'))[IncidentPerformanceTopic::FILED];
+        $filed = $this->kpis(PerformanceScope::organization(), self::period('2026-07-19 09:00:00'))[IncidentPerformanceTopic::FILED];
 
         self::assertSame(0.0, $filed->value);
         self::assertTrue($filed->isKnown(), 'Nobody filed in July, but somebody was looking.');
@@ -372,7 +372,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
         $unserved = $this->anArea('Unserved Reserve');
         $this->reading('Unserved Ecology', $world['module'], $unserved);
 
-        $rows = $this->rows(PerformanceScope::organisation());
+        $rows = $this->rows(PerformanceScope::organization());
 
         self::assertSame(['Ecology', 'Protection Service', 'Unserved Ecology'], array_keys($rows));
 
@@ -397,7 +397,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
         $this->aDepartment('Human Resource');
         $this->em->flush();
 
-        self::assertArrayNotHasKey('Human Resource', $this->rows(PerformanceScope::organisation()));
+        self::assertArrayNotHasKey('Human Resource', $this->rows(PerformanceScope::organization()));
     }
 
     /** A claim that arrived is counted in the column it belongs to. */
@@ -408,7 +408,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
         // livestock-depredation runs compensation; snaring and roadkill run fines.
         self::assertSame(
             1.0,
-            $this->rows(PerformanceScope::organisation())['Ecology']->cells[IncidentPerformanceTopic::COMPENSATION_CLAIMS]->value,
+            $this->rows(PerformanceScope::organization())['Ecology']->cells[IncidentPerformanceTopic::COMPENSATION_CLAIMS]->value,
         );
         // The headline dropped the claim figure; the COLUMN is where it is
         // read now, which is what the assertion above checks.
@@ -422,7 +422,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        $charts = $this->topic()->charts(PerformanceScope::organisation(), self::period());
+        $charts = $this->topic()->charts(PerformanceScope::organization(), self::period());
 
         self::assertCount(2, $charts);
         self::assertSame('incidents.flow', $charts[0]->key);
@@ -443,7 +443,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
 
         self::assertCount(
             IncidentPerformanceTopic::PERIODS,
-            $this->kpis(PerformanceScope::organisation())[IncidentPerformanceTopic::FILED]->history,
+            $this->kpis(PerformanceScope::organization())[IncidentPerformanceTopic::FILED]->history,
         );
     }
 
@@ -451,7 +451,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     {
         $this->world();
 
-        $charts = $this->topic()->charts(PerformanceScope::organisation(), self::period());
+        $charts = $this->topic()->charts(PerformanceScope::organization(), self::period());
 
         self::assertSame('incidents.age', $charts[1]->key);
         self::assertSame(ChartKind::Bar, $charts[1]->kind);
@@ -462,7 +462,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     /** A backlog nobody has is an absence of bars, and the chart drops itself. */
     public function testTheBacklogChartDrawsNothingWhenNothingIsOpen(): void
     {
-        $charts = $this->topic()->charts(PerformanceScope::organisation(), self::period());
+        $charts = $this->topic()->charts(PerformanceScope::organization(), self::period());
 
         self::assertTrue($charts[1]->isEmpty());
     }
@@ -482,7 +482,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
         $this->world();
         $this->signIn($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
 
-        $matrix = $this->topic()->matrix(PerformanceScope::organisation(), self::period());
+        $matrix = $this->topic()->matrix(PerformanceScope::organization(), self::period());
 
         self::assertSame(
             [

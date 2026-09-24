@@ -87,7 +87,7 @@ final class IncidentDepartmentKpiProvider implements DepartmentKpiProviderInterf
     /**
      * ONE SET OF FIGURES PER CALL, at the ref's scope. A ref carrying an area
      * reads that area's incidents and no other's; a ref carrying none is
-     * organisation-wide and every area's incidents roll up into the same plates.
+     * organization-wide and every area's incidents roll up into the same plates.
      * The department's id and name play no part in the figures.
      *
      * @return list<DepartmentKpi>
@@ -111,7 +111,7 @@ final class IncidentDepartmentKpiProvider implements DepartmentKpiProviderInterf
         $caption = \sprintf(
             '%s module · %s',
             $this->name,
-            null === $department->areaUuid ? 'incidents recorded across the organisation' : 'incidents recorded in this area',
+            null === $department->areaUuid ? 'incidents recorded across the organization' : 'incidents recorded in this area',
         );
         $kpis = [
             new DepartmentKpi(

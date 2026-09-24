@@ -147,7 +147,7 @@ final class SensitiveConcernsTest extends FunctionalTestCase
      * there is nothing on it to withhold, and the assertion is that the clerk
      * gets the cell whole rather than a hole where a figure was.
      */
-    public function testTheOrganisationDashboardCarriesNoMoneyFigureToWithhold(): void
+    public function testTheOrganizationDashboardCarriesNoMoneyFigureToWithhold(): void
     {
         $area = $this->anAreaWithKinds();
         $this->withMoney($area);

@@ -609,7 +609,7 @@ final class UhifadhiIncidentBundle extends AbstractBundle
             ->tag(OverviewContributorInterface::TAG);
 
         /*
-         * THE ORGANISATION DASHBOARD'S SEAM — a SECOND contract beside the
+         * THE ORGANIZATION DASHBOARD'S SEAM — a SECOND contract beside the
          * area's, opted into deliberately. The area contributor is asked
          * against an area entity by every installed module; this is asked
          * once, against a scope, by the page at `/`. A module with nothing to

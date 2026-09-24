@@ -27,16 +27,16 @@ use Uhifadhi\Incident\Tests\Integration\IntegrationTestCase;
 use Uhifadhi\Incident\UhifadhiIncidentBundle;
 
 /**
- * WHAT THIS MODULE PUTS ON `/` — the organisation seam, answered against a
+ * WHAT THIS MODULE PUTS ON `/` — the organization seam, answered against a
  * real register spread over TWO areas.
  *
- * TWO AREAS, DELIBERATELY. The whole claim of the organisation contract is
+ * TWO AREAS, DELIBERATELY. The whole claim of the organization contract is
  * that the wide reading IS the narrow ones: a suite with one area would pass
  * against a contributor that had quietly kept reading a single area and
  * nobody would know.
  *
  * THE MORNING IS SATURDAY 19 SEPTEMBER 2026, 11:42 — the design's own sample
- * instant for the organisation dashboard.
+ * instant for the organization dashboard.
  */
 final class IncidentOrgContributionTest extends IntegrationTestCase
 {
@@ -71,11 +71,11 @@ final class IncidentOrgContributionTest extends IntegrationTestCase
      * asking the SAME contributor at each narrower scope and summing what it
      * says — not by asserting a number a fixture happened to produce.
      */
-    public function testTheOrganisationFigureIsEveryAreasFigureOneScopeWider(): void
+    public function testTheOrganizationFigureIsEveryAreasFigureOneScopeWider(): void
     {
         [$north, $south] = $this->twoAreasWithOpenWork();
 
-        $wide = $this->tile(Scope::organisation());
+        $wide = $this->tile(Scope::organization());
         $narrow = array_map(
             fn (AreaOfInterest $area) => (int) $this->tile(Scope::area((string) $area->getUuidString(), (string) $area->getName()))->value,
             [$north, $south],
@@ -96,7 +96,7 @@ final class IncidentOrgContributionTest extends IntegrationTestCase
     {
         $this->twoAreasWithOpenWork();
 
-        $tile = $this->tile(Scope::organisation());
+        $tile = $this->tile(Scope::organization());
 
         self::assertSame('1 filed today', $tile->subline);
         self::assertSame('2 past their term', $tile->alarm);
@@ -119,7 +119,7 @@ final class IncidentOrgContributionTest extends IntegrationTestCase
     {
         $this->twoAreasWithOpenWork();
 
-        $priority = $this->tile(Scope::organisation())->priority;
+        $priority = $this->tile(Scope::organization())->priority;
 
         self::assertGreaterThan(30, $priority, 'patrol-module publishes 30 and comes first.');
         self::assertLessThan(40, $priority, 'storage-module publishes 40 and comes last.');
@@ -134,7 +134,7 @@ final class IncidentOrgContributionTest extends IntegrationTestCase
     {
         $this->anAreaWithKinds('an area nobody has filed against');
 
-        self::assertSame([], $this->contributor()->figures(Scope::organisation(), $this->now()));
+        self::assertSame([], $this->contributor()->figures(Scope::organization(), $this->now()));
     }
 
     /** The cell reads its own figures under its own slug, and nothing else. */
@@ -142,7 +142,7 @@ final class IncidentOrgContributionTest extends IntegrationTestCase
     {
         $this->twoAreasWithOpenWork();
 
-        $context = $this->contributor()->context(Scope::organisation(), $this->now());
+        $context = $this->contributor()->context(Scope::organization(), $this->now());
 
         self::assertSame(['org'], array_keys($context));
         $reading = $context['org'];
@@ -252,7 +252,7 @@ final class IncidentOrgContributionTest extends IntegrationTestCase
         $figures = $this->service('incident.org.figures');
         self::assertInstanceOf(IncidentOrgFigures::class, $figures);
 
-        return $figures->forScope(Scope::organisation(), $this->now());
+        return $figures->forScope(Scope::organization(), $this->now());
     }
 
     private function contributor(): IncidentOrgWidgets

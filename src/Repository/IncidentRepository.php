@@ -706,7 +706,7 @@ final class IncidentRepository extends ServiceEntityRepository
      * HOW MANY INCIDENTS A SCOPE HAS EVER HELD — one area's, or every area's.
      *
      * The denominator that tells a QUIET MORNING from NO REGISTER. An
-     * organisation with a register and nothing open has measured and found
+     * organization with a register and nothing open has measured and found
      * nought; one that has never filed anything has measured nothing at all,
      * and the two are drawn differently wherever this module publishes a
      * figure.

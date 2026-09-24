@@ -130,8 +130,8 @@ return static function (ContainerConfigurator $container): void {
         ]);
 
     /*
-     * THE MODULE'S READING OF A WHOLE ORGANISATION — what it contributes to
-     * the ORGANISATION DASHBOARD at `/`: the "Open incidents" figure in the
+     * THE MODULE'S READING OF A WHOLE ORGANIZATION — what it contributes to
+     * the ORGANIZATION DASHBOARD at `/`: the "Open incidents" figure in the
      * four-to-a-row strip and the cell under it. Both ask this one service,
      * and it memoises per (scope, instant), so the two halves of one
      * contribution can never be measured a second apart.

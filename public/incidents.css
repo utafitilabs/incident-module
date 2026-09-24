@@ -271,7 +271,7 @@
 .i-evgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;margin-top:8px}
 
 /* ── INVOLVED PARTIES ─────────────────────────────────────────────────────
-   People and organisations attached to an incident with a ROLE. A suspect, a
+   People and organizations attached to an incident with a ROLE. A suspect, a
    claimant, a witness and the ranger who reported it are the same shape of
    record wearing different roles — the design refuses to build four tables.
    → Uhifadhi\Incident\Entity\IncidentParty (role enum + free identity)    */

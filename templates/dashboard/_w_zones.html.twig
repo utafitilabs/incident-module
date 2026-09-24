@@ -2,7 +2,7 @@
 
    Zones are presence-driven and do not overlap, so an incident falls in exactly
    one and the counts add up to the window. A point in NO zone is a row of its own
-   ("unzoned") rather than a dropped record: an organisation that has drawn no
+   ("unzoned") rather than a dropped record: an organization that has drawn no
    zones at all is the normal state. #}
 {% set rows = dashboard.zoneCounts %}
 {% set most = rows is empty ? 1 : max(rows) %}

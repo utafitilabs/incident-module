@@ -31,7 +31,7 @@ use Uhifadhi\Incident\UhifadhiIncidentBundle;
  * A SECOND CONTRACT, NOT A WIDER FIRST ONE.
  * {@see IncidentOverviewContributor} answers for one AREA and is asked by
  * every area's overview; this answers for a {@see Scope} and is asked once,
- * by the organisation dashboard. The two are deliberately separate classes
+ * by the organization dashboard. The two are deliberately separate classes
  * because they are separate questions — and a module with nothing to say
  * across areas would implement only the first.
  *
@@ -96,7 +96,7 @@ final readonly class IncidentOrgWidgets implements ContributesStylesheetInterfac
     {
         return [
             new Widget(self::CELL, 'Latest incidents', IncidentOverviewWidgets::GROUP, 6, [12, 9, 6], on: false,
-                note: 'The open work across the organisation, newest first, each row against the term its own category promised.'),
+                note: 'The open work across the organization, newest first, each row against the term its own category promised.'),
         ];
     }
 
@@ -144,7 +144,7 @@ final readonly class IncidentOrgWidgets implements ContributesStylesheetInterfac
             // THE ALARM CARRIES THE COLOUR, NOT THE PLATE. The design draws
             // this tile plain with its broken promises in the failure colour:
             // a backlog is not an alarm, and colouring the whole card would
-            // put the organisation's largest number permanently in red.
+            // put the organization's largest number permanently in red.
             alarm: $reading->figureAlarm(),
             url: $reading->doorUrl,
             priority: self::PRIORITY,

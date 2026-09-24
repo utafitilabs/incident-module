@@ -16,12 +16,12 @@ namespace Uhifadhi\Incident\Model;
 use Uhifadhi\Incident\Entity\Incident;
 
 /**
- * WHAT THIS MODULE SAYS ON THE ORGANISATION DASHBOARD, computed once.
+ * WHAT THIS MODULE SAYS ON THE ORGANIZATION DASHBOARD, computed once.
  *
  * THE SAME READING AS THE AREA'S, ONE SCOPE WIDER, and that is the whole of
  * the difference: the rows come from the one open-work query the module
  * already answers per area ({@see \Uhifadhi\Incident\Repository\IncidentRepository::findOpenByScope()}),
- * asked with no area rather than with one. The organisation's answer IS the
+ * asked with no area rather than with one. The organization's answer IS the
  * areas' answers, so there is no second aggregate to disagree with the first.
  *
  * ONE SET, TWO READERS. The figure in the four-to-a-row strip and the cell
@@ -36,7 +36,7 @@ use Uhifadhi\Incident\Entity\Incident;
  * ABSENT IS NOT ZERO. An installation where nothing has ever been filed has
  * not measured nought open incidents — there is nothing yet to measure — so
  * {@see hasRegister()} is false and the module publishes no figure at all.
- * An organisation WITH a register and a quiet morning publishes "0", because
+ * An organization WITH a register and a quiet morning publishes "0", because
  * there the module really did look.
  */
 final readonly class IncidentOrgReading

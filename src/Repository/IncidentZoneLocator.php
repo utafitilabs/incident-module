@@ -27,7 +27,7 @@ use Uhifadhi\Bundle\AreaBundle\Entity\Zone;
  * join behind every widget on the dashboard, so the answer is stored on the row
  * and this locator runs once.
  *
- * UNZONED IS A FIRST-CLASS ANSWER, and null is how it is said. An organisation
+ * UNZONED IS A FIRST-CLASS ANSWER, and null is how it is said. An organization
  * that has drawn no zones at all is the normal state, so every caller must be
  * able to handle "none" — and none of them may treat it as an error, a missing
  * configuration, or a reason to refuse a report.

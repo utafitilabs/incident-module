@@ -126,7 +126,7 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
         self::assertSame('Incidents module · incidents recorded in this area', $kpis['incidents']->caption);
     }
 
-    public function testAnOrganisationWideCaptionSaysTheOrganisation(): void
+    public function testAnOrganizationWideCaptionSaysTheOrganization(): void
     {
         $area = $this->anAreaWithKinds();
         $department = $this->aDepartment();
@@ -134,7 +134,7 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
 
         $this->anIncident($area, at: $now->modify('-1 day'));
 
-        self::assertSame('Incidents module · incidents recorded across the organisation', $this->kpisFor($department, $now)['incidents']->caption);
+        self::assertSame('Incidents module · incidents recorded across the organization', $this->kpisFor($department, $now)['incidents']->caption);
     }
 
     /** An incident filed by somebody who holds no position still counts for its area. */
@@ -316,10 +316,10 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
     }
 
     /**
-     * AN ORGANISATION-WIDE REF SUMS EVERY AREA — counts and money alike — into one
+     * AN ORGANIZATION-WIDE REF SUMS EVERY AREA — counts and money alike — into one
      * reading, whoever recorded the rows.
      */
-    public function testAnOrganisationWideRefSumsEveryAreaMoneyIncluded(): void
+    public function testAnOrganizationWideRefSumsEveryAreaMoneyIncluded(): void
     {
         $this->signInAReaderOfMoney();
         $north = $this->anAreaWithKinds('North Sector');
@@ -374,7 +374,7 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
      * the areas added up, so one area the reader is refused would be smuggled
      * into the figure — and the whole plate goes rather than a quieter total.
      */
-    public function testAnOrganisationWideMoneyPlateNeedsEveryAreaInIt(): void
+    public function testAnOrganizationWideMoneyPlateNeedsEveryAreaInIt(): void
     {
         $north = $this->anAreaWithKinds('North Sector');
         $this->anAreaWithKinds('South Sector');

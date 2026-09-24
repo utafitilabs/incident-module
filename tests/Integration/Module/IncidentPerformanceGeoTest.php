@@ -108,14 +108,14 @@ final class IncidentPerformanceGeoTest extends IntegrationTestCase
     }
 
     /**
-     * THE ORGANISATION'S PLATE IS ONE FIGURE PER AREA, and the ground is named
+     * THE ORGANIZATION'S PLATE IS ONE FIGURE PER AREA, and the ground is named
      * by its uuid — the area bundle owns the shapes and draws them.
      */
-    public function testTheOrganisationReadsOneFigurePerArea(): void
+    public function testTheOrganizationReadsOneFigurePerArea(): void
     {
         $world = $this->world();
 
-        $series = $this->series(PerformanceScope::organisation());
+        $series = $this->series(PerformanceScope::organization());
         self::assertArrayHasKey(IncidentPerformanceGeo::BY_AREA, $series);
 
         $areas = $series[IncidentPerformanceGeo::BY_AREA];
@@ -127,12 +127,12 @@ final class IncidentPerformanceGeoTest extends IntegrationTestCase
         );
     }
 
-    /** No zones plate on the organisation's page: zones belong to one area. */
-    public function testTheOrganisationIsHandedNoZonePlate(): void
+    /** No zones plate on the organization's page: zones belong to one area. */
+    public function testTheOrganizationIsHandedNoZonePlate(): void
     {
         $this->world();
 
-        self::assertArrayNotHasKey(IncidentPerformanceGeo::BY_ZONE, $this->series(PerformanceScope::organisation()));
+        self::assertArrayNotHasKey(IncidentPerformanceGeo::BY_ZONE, $this->series(PerformanceScope::organization()));
     }
 
     /**
@@ -199,7 +199,7 @@ final class IncidentPerformanceGeoTest extends IntegrationTestCase
         $scope = PerformanceScope::area((string) $unserved->getUuidString(), 'Unserved Reserve');
 
         self::assertSame([], $this->geo()->geo($scope, self::period()));
-        self::assertSame([], $this->geo()->geo(PerformanceScope::organisation(), self::period()));
+        self::assertSame([], $this->geo()->geo(PerformanceScope::organization(), self::period()));
     }
 
     /**
@@ -229,7 +229,7 @@ final class IncidentPerformanceGeoTest extends IntegrationTestCase
         $this->anIncident($world['north'], 'snaring', 'July snare', new \DateTimeImmutable('2026-07-04 09:00:00'));
         $this->em->flush();
 
-        $july = self::values($this->series(PerformanceScope::organisation(), self::period('2026-07-19 09:00:00'))[IncidentPerformanceGeo::BY_AREA]);
+        $july = self::values($this->series(PerformanceScope::organization(), self::period('2026-07-19 09:00:00'))[IncidentPerformanceGeo::BY_AREA]);
 
         self::assertSame(['North Sector' => 1.0], $july);
     }

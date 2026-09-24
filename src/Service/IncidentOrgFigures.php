@@ -21,12 +21,12 @@ use Uhifadhi\Incident\Model\IncidentOrgReading;
 use Uhifadhi\Incident\Repository\IncidentRepository;
 
 /**
- * BUILDS THIS MODULE'S READING OF A WHOLE ORGANISATION, once per render.
+ * BUILDS THIS MODULE'S READING OF A WHOLE ORGANIZATION, once per render.
  *
  * IT IS THE AREA READING ONE SCOPE WIDER AND NOT A SECOND AGGREGATE. Every
  * row comes from {@see IncidentRepository::findOpenByScope()} — the same
  * query the performance section already asks per area — handed the scope's
- * area or nothing at all. A module that grew its own organisation-level sum
+ * area or nothing at all. A module that grew its own organization-level sum
  * would have two answers to "how many are open" and no way to say which was
  * right.
  *
@@ -52,7 +52,7 @@ final class IncidentOrgFigures
 
     public function forScope(Scope $scope, \DateTimeImmutable $now): IncidentOrgReading
     {
-        $key = ($scope->areaUuid ?? 'organisation').'@'.$now->format(\DateTimeInterface::ATOM);
+        $key = ($scope->areaUuid ?? 'organization').'@'.$now->format(\DateTimeInterface::ATOM);
 
         return $this->memo[$key] ??= $this->build($scope, $now);
     }
@@ -94,7 +94,7 @@ final class IncidentOrgFigures
      * spanning several areas has no single page, and the door goes to the areas
      * register rather than picking one area's and calling it everybody's.
      *
-     * AN ORGANISATION-LEVEL INCIDENTS PAGE IS RULED AND NOT BUILT. When this
+     * AN ORGANIZATION-LEVEL INCIDENTS PAGE IS RULED AND NOT BUILT. When this
      * module ships one, this is the one method that changes.
      *
      * @param list<Incident> $open

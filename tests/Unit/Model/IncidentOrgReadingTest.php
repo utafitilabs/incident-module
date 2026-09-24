@@ -23,7 +23,7 @@ use Uhifadhi\Incident\Model\IncidentAge;
 use Uhifadhi\Incident\Model\IncidentOrgReading;
 
 /**
- * THE ORGANISATION FIGURE AND THE CELL UNDER IT ARE ONE READING, and this is
+ * THE ORGANIZATION FIGURE AND THE CELL UNDER IT ARE ONE READING, and this is
  * where that is proved without a database: the count in the strip, the count
  * in the card's tab and the rows in the card all come off the same set.
  *
@@ -36,7 +36,7 @@ use Uhifadhi\Incident\Model\IncidentOrgReading;
 #[CoversClass(IncidentAge::class)]
 final class IncidentOrgReadingTest extends TestCase
 {
-    /** The design's sample instant for the organisation dashboard. */
+    /** The design's sample instant for the organization dashboard. */
     private const string NOW = '2026-09-19 11:42:00';
 
     public function testTheFigureAndTheCardCountTheSameOpenWork(): void

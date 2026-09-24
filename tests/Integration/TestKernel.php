@@ -330,7 +330,7 @@ final class TestKernel extends Kernel
             'incident.overview.map_layers',
             'incident.overview.pulse',
             'incident.overview.copy',
-            // The ORGANISATION dashboard's seam — a second contract beside the
+            // The ORGANIZATION dashboard's seam — a second contract beside the
             // area's, and public here for the same reason: the contribution
             // test has to be able to ask the contributor what it puts on `/`.
             'incident.org.widgets',
@@ -438,14 +438,14 @@ final class TestKernel extends Kernel
         // THE SCREENS THIS MODULE'S CRUMB POINTS AT, mounted from the bundle
         // that owns them rather than declared as bare paths here: the area
         // register, the area page, the per-area module grid — and the
-        // ORGANISATION DASHBOARD at `/`, which is the same bundle's and is
+        // ORGANIZATION DASHBOARD at `/`, which is the same bundle's and is
         // where this module contributes a figure and a cell.
         //
         // THE SHELL'S WELCOME PAGE IS DELIBERATELY NOT IMPORTED. It claims `/`
         // too, and the core is explicit that one of the two answers that
         // address and never both; an installation that keeps the welcome page
-        // has no organisation dashboard, and there would be no seam here to
-        // test. @see UPGRADE-1.0.md, "`/` is the organisation dashboard".
+        // has no organization dashboard, and there would be no seam here to
+        // test. @see UPGRADE-1.0.md, "`/` is the organization dashboard".
         $routes->import('@AreaBundle/Controller/', 'attribute');
 
         // THE CONFIGURE PAGE, mounted the way an installation mounts it — a

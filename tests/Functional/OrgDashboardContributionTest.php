@@ -25,13 +25,13 @@ use Uhifadhi\Incident\UhifadhiIncidentBundle;
  * controller, with this module installed, and the cell is looked for in the
  * markup that came back.
  *
- * THE MODULE IS NEVER SWITCHED ON FOR THE ORGANISATION. It is switched on per
+ * THE MODULE IS NEVER SWITCHED ON FOR THE ORGANIZATION. It is switched on per
  * AREA, and the dashboard is the sum of the areas — which is why the fixture
  * installs it in an area and then asks for a page that names none.
  */
 final class OrgDashboardContributionTest extends FunctionalTestCase
 {
-    public function testTheModulesCellIsDrawnFromItsOwnPartialOnTheOrganisationDashboard(): void
+    public function testTheModulesCellIsDrawnFromItsOwnPartialOnTheOrganizationDashboard(): void
     {
         $area = $this->anAreaWithKinds('North Range');
         $this->anIncident($area, title: 'Lion killed four goats at Riverside');
@@ -44,7 +44,7 @@ final class OrgDashboardContributionTest extends FunctionalTestCase
         // THE CELL, and it is this module's: the id the shipped compositions
         // name, and the contributor tag that says whose figure it is.
         $cell = $crawler->filter('[data-w="incidents"]');
-        self::assertCount(1, $cell, 'The organisation dashboard draws this module’s cell.');
+        self::assertCount(1, $cell, 'The organization dashboard draws this module’s cell.');
         self::assertSame('incidents', $cell->filter('.ao-by')->text(''));
 
         // DRAWN FROM THIS BUNDLE'S OWN PARTIAL, which is what the columns

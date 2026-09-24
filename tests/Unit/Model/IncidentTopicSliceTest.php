@@ -33,8 +33,8 @@ final class IncidentTopicSliceTest extends TestCase
     private const string NORTH = '0198f0a0-0000-7000-8000-00000000north';
     private const string SOUTH = '0198f0a0-0000-7000-8000-00000000south';
 
-    /** The organisation's page: an org-wide department reads every area. */
-    public function testAnOrgWideDepartmentOnTheOrganisationsPageRollsUpEveryArea(): void
+    /** The organization's page: an org-wide department reads every area. */
+    public function testAnOrgWideDepartmentOnTheOrganizationsPageRollsUpEveryArea(): void
     {
         $slice = IncidentTopicSlice::of(null, null);
 
@@ -43,8 +43,8 @@ final class IncidentTopicSliceTest extends TestCase
         self::assertTrue($slice->isRollUp());
     }
 
-    /** The organisation's page: an area-level department reads its own area. */
-    public function testAnAreaLevelDepartmentOnTheOrganisationsPageReadsItsOwnArea(): void
+    /** The organization's page: an area-level department reads its own area. */
+    public function testAnAreaLevelDepartmentOnTheOrganizationsPageReadsItsOwnArea(): void
     {
         $slice = IncidentTopicSlice::of(null, self::NORTH);
 

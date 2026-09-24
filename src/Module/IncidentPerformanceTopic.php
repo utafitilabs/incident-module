@@ -57,7 +57,7 @@ use Uhifadhi\Incident\Repository\IncidentRepository;
  * {@see IncidentDepartmentKpiProvider} states for the KPI plates. All a
  * department contributes to a row is WHICH GROUND it reads, which
  * {@see IncidentTopicSlice} resolves as the intersection of its scope with the
- * page's: an organisation-wide department reads every area, an area-level one
+ * page's: an organization-wide department reads every area, an area-level one
  * reads its own. Two departments scoped to the same area therefore read
  * identical figures, and no surface adds them together.
  *
@@ -417,7 +417,7 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
     /**
      * THE GROUND THE PAGE'S OWN FIGURES ARE READ OVER, and since when.
      *
-     * The area is the page's — every area on the organisation's page, one on
+     * The area is the page's — every area on the organization's page, one on
      * an area's. The date is THE EARLIEST any of the rows could have been
      * asked: the module has been recording somewhere on this page since then,
      * and every period before it is a hole for the headline exactly as it is

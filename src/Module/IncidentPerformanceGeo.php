@@ -61,8 +61,8 @@ use Uhifadhi\Incident\Repository\IncidentRepository;
  * is hued beyond stating which way is good.
  *
  * ── FIGURES FOLLOW SCOPE ─────────────────────────────────────────────────────
- * The organisation's page reads every area and is handed no zone plate — zones
- * belong to one area, and a plate of every zone in the organisation is two
+ * The organization's page reads every area and is handed no zone plate — zones
+ * belong to one area, and a plate of every zone in the organization is two
  * geographies in one legend. An area's page reads that area on the area plate
  * AND its zones underneath, which is what the overview's "Incidents by zone"
  * card draws.
@@ -91,7 +91,7 @@ use Uhifadhi\Incident\Repository\IncidentRepository;
  */
 final readonly class IncidentPerformanceGeo implements PerformanceGeoProviderInterface
 {
-    /** Filings per area — the organisation's plate, and one area's own. */
+    /** Filings per area — the organization's plate, and one area's own. */
     public const string BY_AREA = 'incidents.filed_by_area';
 
     /** Filings per zone of one area — the overview's "Incidents by zone" card. */
@@ -119,7 +119,7 @@ final readonly class IncidentPerformanceGeo implements PerformanceGeoProviderInt
     }
 
     /**
-     * ONE PLATE ON THE ORGANISATION'S PAGE, TWO ON AN AREA'S — and neither
+     * ONE PLATE ON THE ORGANIZATION'S PAGE, TWO ON AN AREA'S — and neither
      * where this module has nothing to say about the ground.
      *
      * @return list<GeoSeries>
