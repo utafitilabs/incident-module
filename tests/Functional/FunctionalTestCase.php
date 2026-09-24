@@ -29,7 +29,7 @@ use Uhifadhi\Incident\Enum\IncidentSeverityEnum;
 use Uhifadhi\Incident\Module\IncidentModuleProvider;
 use Uhifadhi\Incident\Service\IncidentReportService;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\AreaVocabulary;
-use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedPermissionVoter;
+use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedGrantVoter;
 
 /**
  * THE SCREENS, THROUGH A REAL KERNEL. Every page below is fetched over HTTP
@@ -77,11 +77,10 @@ abstract class FunctionalTestCase extends WebTestCase
         // the first row this test writes.
         $this->em->clear();
 
-        // THE HALF A DEPLOY ALREADY DOES. In an installation the registry
-        // reconciles itself on a cache warm-up, so the catalogue holds this
-        // module before the first request; here the schema is rebuilt after the
-        // kernel booted, so the tables the warmer wrote into are gone and the
-        // reconciliation is run again by hand. Without it the catalogue is empty,
+        // THE HALF A DEPLOY ALREADY DOES. In an installation `registry:sync`
+        // fills the catalogue after the migrations, so it holds this module
+        // before the first request; here the schema is rebuilt after the kernel
+        // booted, so the reconciliation is run by hand. Without it the catalogue is empty,
         // `install()` below has no row to point at, and the gate lets everything
         // through — a suite that would pass while every page 404'd in the park.
         /** @var RegistrySyncService $registry */
@@ -179,13 +178,13 @@ abstract class FunctionalTestCase extends WebTestCase
     /** Somebody who may FILE and may not MOVE — the cheap half of the workflow. */
     protected function aReporter(): User
     {
-        return $this->aUser(FixedPermissionVoter::REPORTER_EMAIL, 'Joseph', 'Mollel');
+        return $this->aUser(FixedGrantVoter::REPORTER_EMAIL, 'Joseph', 'Mollel');
     }
 
     /** Somebody who may do both — the supervisor. */
     protected function aManager(): User
     {
-        return $this->aUser(FixedPermissionVoter::MANAGER_EMAIL, 'Sara', 'Laizer');
+        return $this->aUser(FixedGrantVoter::MANAGER_EMAIL, 'Sara', 'Laizer');
     }
 
     protected function aUser(string $email, string $first, string $last): User

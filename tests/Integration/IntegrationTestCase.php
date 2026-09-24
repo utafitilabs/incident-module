@@ -197,7 +197,7 @@ abstract class IntegrationTestCase extends KernelTestCase
      * HTTP client here, so the token goes straight into the storage the way a
      * firewall would have put it there.
      *
-     * The account decides what the reading shows: {@see FixedPermissionVoter}
+     * The account decides what the reading shows: {@see FixedGrantVoter}
      * gives the manager the money and takes it off the clerk.
      */
     protected function signIn(User $user): void

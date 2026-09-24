@@ -24,7 +24,7 @@ use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
 use Uhifadhi\Incident\Module\IncidentDepartmentKpiProvider;
 use Uhifadhi\Incident\Repository\IncidentRepository;
 use Uhifadhi\Incident\Service\IncidentTransitionService;
-use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedPermissionVoter;
+use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedGrantVoter;
 use Uhifadhi\Incident\Tests\Integration\IntegrationTestCase;
 
 /**
@@ -55,7 +55,7 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
      */
     private function signInAReaderOfMoney(): void
     {
-        $this->signIn($this->aUser(FixedPermissionVoter::MANAGER_EMAIL, 'Sara', 'Laizer'));
+        $this->signIn($this->aUser(FixedGrantVoter::MANAGER_EMAIL, 'Sara', 'Laizer'));
     }
 
     private function transitions(): IncidentTransitionService
@@ -359,7 +359,7 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
         new IncidentMoney($fine, MoneyDirectionEnum::Fine)->setAssessed(450_000);
         $this->em->flush();
 
-        $this->signIn($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
+        $this->signIn($this->aUser(FixedGrantVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
         $kpis = $this->kpisFor($department, $now, $area);
 
         self::assertArrayNotHasKey('incidents_fine', $kpis);
@@ -385,7 +385,7 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
         new IncidentMoney($fine, MoneyDirectionEnum::Fine)->setAssessed(450_000);
         $this->em->flush();
 
-        $this->signIn($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
+        $this->signIn($this->aUser(FixedGrantVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
         self::assertArrayNotHasKey('incidents_fine', $this->kpisFor($department, $now));
     }
 

@@ -54,7 +54,7 @@ use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedModules;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedStationFigureProviders;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedTopicProviders;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedZoneFigureProviders;
-use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedPermissionVoter;
+use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedGrantVoter;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\HeaderUserAuthenticator;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\StubRecordFileSource;
 use Uhifadhi\Incident\UhifadhiIncidentBundle;
@@ -214,7 +214,7 @@ final class TestKernel extends Kernel
         // declares four concerns and grants their pairs to
         // nobody, so something has to decide who holds them. Tagged by hand — a
         // reusable-bundle test kernel does not autoconfigure.
-        $container->services()->set(FixedPermissionVoter::class)->tag('security.voter');
+        $container->services()->set(FixedGrantVoter::class)->tag('security.voter');
 
         // ANOTHER MODULE, holding the photographs of a record this bundle knows
         // nothing about — the far side of the cross-module file contract the report

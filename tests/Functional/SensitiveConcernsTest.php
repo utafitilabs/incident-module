@@ -17,7 +17,7 @@ use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Enum\IncidentTransitionEnum;
 use Uhifadhi\Incident\Service\IncidentTransitionService;
-use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedPermissionVoter;
+use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedGrantVoter;
 
 /**
  * WITHHOLDING A FACT WITHOUT WITHHOLDING THE PAGE — the whole reason the case
@@ -72,7 +72,7 @@ final class SensitiveConcernsTest extends FunctionalTestCase
         self::assertStringContainsString('250,000', $seen, 'the reader who holds case-money.read reads the approved amount.');
 
         // The clerk, who does not: the same page, one card short.
-        $this->client->loginUser($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
+        $this->client->loginUser($this->aUser(FixedGrantVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
         $withheld = $this->client->request('GET', $url)->html();
 
         self::assertResponseIsSuccessful('a withheld fact must never withhold the page it sits on.');
@@ -94,7 +94,7 @@ final class SensitiveConcernsTest extends FunctionalTestCase
         $incident = $this->withMoney($area);
 
         $token = $this->csrfFor($area);
-        $this->client->loginUser($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
+        $this->client->loginUser($this->aUser(FixedGrantVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
         $this->client->request('POST', \sprintf(
             '/areas/%s/modules/incidents/%s/money',
             $this->uuidOf($area),
@@ -130,7 +130,7 @@ final class SensitiveConcernsTest extends FunctionalTestCase
         self::assertStringContainsString('M TZS', $seen, 'the KPI strip carries the money headline for somebody who may read it.');
 
         // The clerk: the same dashboard, the money said to be withheld.
-        $this->client->loginUser($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
+        $this->client->loginUser($this->aUser(FixedGrantVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
         $withheld = $this->client->request('GET', $url)->html();
 
         self::assertResponseIsSuccessful('a withheld figure must never withhold the dashboard it sits on.');
@@ -152,7 +152,7 @@ final class SensitiveConcernsTest extends FunctionalTestCase
         $area = $this->anAreaWithKinds();
         $this->withMoney($area);
 
-        $this->client->loginUser($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
+        $this->client->loginUser($this->aUser(FixedGrantVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
         $html = $this->client->request('GET', '/')->html();
 
         self::assertResponseIsSuccessful();

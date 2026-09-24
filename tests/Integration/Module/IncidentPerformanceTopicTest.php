@@ -25,7 +25,7 @@ use Uhifadhi\Contracts\Performance\PerformanceScope;
 use Uhifadhi\Contracts\Performance\TopicKpi;
 use Uhifadhi\Incident\Module\IncidentPerformanceTopic;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedTopicProviders;
-use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedPermissionVoter;
+use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedGrantVoter;
 use Uhifadhi\Incident\Tests\Integration\IntegrationTestCase;
 
 /**
@@ -141,7 +141,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
      */
     private function rows(PerformanceScope $scope, ?FigurePeriod $period = null): array
     {
-        $this->signIn($this->aUser(FixedPermissionVoter::MANAGER_EMAIL, 'Sara', 'Laizer'));
+        $this->signIn($this->aUser(FixedGrantVoter::MANAGER_EMAIL, 'Sara', 'Laizer'));
 
         $byName = [];
         foreach ($this->topic()->matrix($scope, $period ?? self::period())->rows as $row) {
@@ -480,7 +480,7 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
     public function testTheCompensationColumnIsWithheldFromAReaderWhoMayNotReadMoney(): void
     {
         $this->world();
-        $this->signIn($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
+        $this->signIn($this->aUser(FixedGrantVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
 
         $matrix = $this->topic()->matrix(PerformanceScope::organization(), self::period());
 

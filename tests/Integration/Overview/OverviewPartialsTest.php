@@ -17,7 +17,7 @@ use Twig\Environment;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Incident\Enum\IncidentStatusEnum;
 use Uhifadhi\Incident\Overview\IncidentOverviewContributor;
-use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedPermissionVoter;
+use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedGrantVoter;
 use Uhifadhi\Incident\Tests\Integration\OverviewTestCase;
 
 /**
@@ -149,7 +149,7 @@ final class OverviewPartialsTest extends OverviewTestCase
     public function testTheMoneyCardIsWithheldFromAReaderWhoMayNotReadMoney(): void
     {
         $area = $this->aRegister();
-        $this->signIn($this->aUser(FixedPermissionVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
+        $this->signIn($this->aUser(FixedGrantVoter::CLERK_EMAIL, 'Sara', 'Mushi'));
 
         $twig = static::getContainer()->get('twig');
         self::assertInstanceOf(Environment::class, $twig);
@@ -210,7 +210,7 @@ final class OverviewPartialsTest extends OverviewTestCase
      */
     private function render(string $widget, AreaOfInterest $area): string
     {
-        $this->signIn($this->aUser(FixedPermissionVoter::MANAGER_EMAIL, 'Sara', 'Laizer'));
+        $this->signIn($this->aUser(FixedGrantVoter::MANAGER_EMAIL, 'Sara', 'Laizer'));
 
         $twig = static::getContainer()->get('twig');
         self::assertInstanceOf(Environment::class, $twig);

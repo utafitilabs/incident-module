@@ -47,7 +47,7 @@ use Uhifadhi\Incident\Access\IncidentConcerns;
  *
  * @extends Voter<string, mixed>
  */
-final class FixedPermissionVoter extends Voter
+final class FixedGrantVoter extends Voter
 {
     /** May file an incident, and may not move one. */
     public const string REPORTER_EMAIL = 'reporter@example.test';
