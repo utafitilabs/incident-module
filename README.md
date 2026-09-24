@@ -42,24 +42,24 @@ through that same editor's service.
 composer require uhifadhi/incident-module
 ```
 
-Neither this package nor the core it requires is on Packagist yet, and neither
-carries a stable tag, so an installation names where both come from. Composer
-reads `repositories` from the ROOT package only — an entry in a dependency's own
-`composer.json` is ignored — so these lines belong in the application's:
+This module requires the core (`uhifadhi/uhifadhi`) and the evidence store (`uhifadhi/storage-module`); all three are on Packagist, so an installation names nothing.
 
-```json
-"repositories": [
-    { "type": "vcs", "url": "https://github.com/utafitilabs/uhifadhi" },
-    { "type": "vcs", "url": "https://github.com/utafitilabs/incident-module" },
-    { "type": "vcs", "url": "https://github.com/utafitilabs/storage-module" }
-]
+Then the installation's three commands, the same three after every change to it:
+
+```console
+php bin/console cache:clear --no-warmup
+php bin/console doctrine:migrations:migrate
+php bin/console cache:warmup
 ```
 
-The third line is needed only where the installation also wants incident
-evidence on the Files hub; the second can go once this package is published.
+This module ships the migrations for the tables it owns and registers their path itself, so `migrate` runs them and an installation writes no version for them; `doctrine:migrations:diff` stays reserved for the installation's own entities and must report no changes after this. In development AssetMapper serves the module's stylesheets and scripts from source; the production image compiles them.
 
 The bundle registers via Flex (`"type": "symfony-bundle"`), which adds
 `Uhifadhi\Incident\UhifadhiIncidentBundle` to `config/bundles.php`.
+
+### Switching it on
+
+A module is installed but **parked**: every page of it answers 404 in an area that has not taken it. An administrator switches it on per area from that area's module grid, and grants the module's permissions to the positions that need them from the positions screen. Reading needs the module's `read` grant; nothing else is required to see it.
 
 ## Getting started
 
