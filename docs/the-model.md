@@ -132,7 +132,7 @@ The admin's "copy from another area" gesture is
 deliberately deferred: it needs to enumerate areas and read their names — which
 `Uhifadhi\Contracts\Entity\AreaInterface` now exposes (`getName`,
 `getUuidString`, and enumeration through the ORM against the interface; see
-[the core's `area-contract.md`](https://github.com/uhifadhilabs/uhifadhi/blob/main/src/Uhifadhi/Contracts/docs/area-contract.md)) —
+[the core's `area-contract.md`](https://github.com/utafitilabs/uhifadhi/blob/main/src/Uhifadhi/Contracts/docs/area-contract.md)) —
 but the gesture itself is not yet ruled, and the empty-state template marks the
 contract.
 

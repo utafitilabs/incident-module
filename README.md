@@ -49,9 +49,9 @@ reads `repositories` from the ROOT package only — an entry in a dependency's o
 
 ```json
 "repositories": [
-    { "type": "vcs", "url": "https://github.com/uhifadhilabs/uhifadhi" },
-    { "type": "vcs", "url": "https://github.com/uhifadhilabs/incident-module" },
-    { "type": "vcs", "url": "https://github.com/uhifadhilabs/storage-module" }
+    { "type": "vcs", "url": "https://github.com/utafitilabs/uhifadhi" },
+    { "type": "vcs", "url": "https://github.com/utafitilabs/incident-module" },
+    { "type": "vcs", "url": "https://github.com/utafitilabs/storage-module" }
 ]
 ```
 
@@ -169,7 +169,7 @@ the atlas's, which is why an incident map, a patrol map and the area map read
 identically. The third argument is this module's filter row, rendered one row
 above the map and inside the plate, so the chips stay a row in fullscreen.
 
-The full API is [the atlas components](https://github.com/uhifadhilabs/uhifadhi/blob/main/src/Uhifadhi/Bundle/AtlasBundle/docs/components.md).
+The full API is [the atlas components](https://github.com/utafitilabs/uhifadhi/blob/main/src/Uhifadhi/Bundle/AtlasBundle/docs/components.md).
 
 ## Upgrading
 
