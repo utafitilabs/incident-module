@@ -146,14 +146,14 @@ final class IncidentPrefillTest extends TestCase
     public function testTheHandOffCarriesThePatrolAndTheObserverBesideTheLabel(): void
     {
         $prefill = IncidentPrefill::fromRequest(Request::create('/', 'GET', [
-            'patrol' => 'P-0142 · foot patrol · Endulen',
+            'patrol' => 'P-0142 · foot patrol · Southern Valley',
             'ranger' => 'S. Laizer · ranger',
         ]));
 
-        self::assertSame('P-0142 · foot patrol · Endulen', $prefill->patrol);
+        self::assertSame('P-0142 · foot patrol · Southern Valley', $prefill->patrol);
         self::assertSame('S. Laizer · ranger', $prefill->ranger);
         self::assertSame(
-            ['patrol' => 'P-0142 · foot patrol · Endulen', 'ranger' => 'S. Laizer · ranger'],
+            ['patrol' => 'P-0142 · foot patrol · Southern Valley', 'ranger' => 'S. Laizer · ranger'],
             $prefill->toQuery(),
         );
     }

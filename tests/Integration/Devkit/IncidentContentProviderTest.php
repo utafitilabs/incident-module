@@ -331,7 +331,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
 
         $this->provider()->load();
 
-        $outside = $this->countBySql('SELECT count(*) FROM incident WHERE ST_X(position) NOT BETWEEN 35.0 AND 35.8');
+        $outside = $this->countBySql('SELECT count(*) FROM incident WHERE ST_X(position) NOT BETWEEN -22.0 AND -21.2');
 
         self::assertSame(0, $outside);
     }
@@ -374,7 +374,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
     private function anAreaSomewhereElse(): AreaOfInterest
     {
         $area = $this->anArea('Sample Area');
-        $area->setGeom('{"type":"MultiPolygon","coordinates":[[[[35.0,-3.5],[35.8,-3.5],[35.8,-2.7],[35.0,-2.7],[35.0,-3.5]]]]}');
+        $area->setGeom('{"type":"MultiPolygon","coordinates":[[[[-22.0,-3.5],[-21.2,-3.5],[-21.2,-2.7],[-22.0,-2.7],[-22.0,-3.5]]]]}');
         $this->em->flush();
 
         return $area;
