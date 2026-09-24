@@ -59,6 +59,18 @@ use Uhifadhi\Incident\Module\IncidentModuleProvider;
  * module's charter forbids anything that lets one reader see a subset of a
  * register another reader sees in full - the whole point of filing an
  * incident once is that every department that needs it reads the same row.
+ *
+ * HOW A PAIR DECLARED HERE IS ENFORCED. Every route of this module states its
+ * pair with #[IsGranted(<key>.<verb>, subject: 'area')], and the attribute is
+ * honoured by a listener that ships in symfony/security-http, on the
+ * controller-arguments event, resolving `subject` by ARGUMENT NAME and asking
+ * the authorization checker with the area the route already resolved. So a
+ * kernel without SecurityBundle honours none of them - which is why no screen
+ * that WRITES is registered where SecurityBundle is absent
+ * (UhifadhiIncidentBundle::loadExtension()).
+ *
+ * @see https://symfony.com/doc/current/security.html#access-control-in-controllers
+ * @see vendor/symfony/security-http/EventListener/IsGrantedAttributeListener.php
  */
 final readonly class IncidentConcerns implements ConcernSourceInterface
 {
