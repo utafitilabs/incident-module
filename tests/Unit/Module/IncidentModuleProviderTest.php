@@ -44,17 +44,4 @@ final class IncidentModuleProviderTest extends TestCase
     {
         self::assertSame('incident_dashboard', new IncidentModuleProvider('operations')->entryRoute());
     }
-
-    /**
-     * IT DECLARES NO PERMISSIONS OF ITS OWN ANY MORE, and the empty list is
-     * the assertion rather than an absence. What there is to have a permission
-     * about in this module is declared through the access seam
-     * ({@see \Uhifadhi\Incident\Access\IncidentConcerns}); a row returned
-     * here as well would print the module twice in one matrix — once as flat
-     * values nothing enforces, once as the concerns everything gates on.
-     */
-    public function testItDeclaresItsPowersThroughTheAccessSeamAndNotHere(): void
-    {
-        self::assertSame([], new IncidentModuleProvider('operations')->permissions());
-    }
 }

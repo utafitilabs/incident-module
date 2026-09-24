@@ -73,15 +73,9 @@ final class IncidentModuleProvider implements ModuleProviderInterface
     }
 
     /*
-     * IT DECLARES NO PERMISSIONS HERE, AND THAT IS THE CHANGE, NOT AN OMISSION.
-     * What there is to have a permission about in this module is declared
-     * through the access seam instead — one source, four concerns, each with
-     * the verbs something here actually enforces:
+     * WHAT THERE IS TO HAVE A PERMISSION ABOUT IN THIS MODULE is declared
+     * through the access seam, not here — one source, four concerns, each
+     * with the verbs something here actually enforces:
      * {@see \Uhifadhi\Incident\Access\IncidentConcerns}.
-     *
-     * The trait's empty default stands rather than the two deprecated
-     * `ModulePermission` rows this used to return, because keeping both would
-     * print the module twice in one matrix — once as two flat values nothing
-     * enforces any more, and once as the four concerns everything now gates on.
      */
 }
