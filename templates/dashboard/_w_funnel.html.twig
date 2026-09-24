@@ -2,19 +2,11 @@
 
    Reached, not "are sitting in": a resolved incident passed through
    verification, so it counts on the verified row. Conflating the two would draw
-   a funnel that widens, which is the one shape a funnel cannot have. #}
-{% set reached = dashboard.reachedCounts %}
-{% set widest = dashboard.filedCount > 0 ? dashboard.filedCount : 1 %}
+   a funnel that widens, which is the one shape a funnel cannot have
+   ({@see IncidentDashboard::reachedCounts}).
+
+   THE DRAWING IS THE ATLAS'S, and the order is what keeps the funnel a funnel:
+   the states are stated in the order the workflow runs them. #}
 <div class="c" data-w="funnel">
-    <span class="tab">Status funnel<span class="src">· this window’s {{ dashboard.filedCount }} incidents</span></span>
-    <svg class="ch" viewBox="0 0 470 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How many incidents reached each state">
-        <line class="grid" x1="118" y1="4" x2="118" y2="160"/>
-        {% for place in dashboard.places %}
-            {% set y = 10 + loop.index0 * 30 %}
-            {% set width = (reached[place.value] / widest * 330)|round %}
-            <text x="112" y="{{ y + 14 }}" text-anchor="end">{{ place.label }}</text>
-            <rect x="118" y="{{ y }}" width="{{ width }}" height="19" rx="3" fill="var(--acc)" opacity="{{ (0.90 - loop.index0 * 0.13)|number_format(2) }}"><title>{{ reached[place.value] }} of {{ dashboard.filedCount }} reached {{ place.label }}</title></rect>
-            <text class="anno" x="{{ 124 + width }}" y="{{ y + 14 }}">{{ reached[place.value] }}</text>
-        {% endfor %}
-    </svg>
+    {{ atlas_chart(dashboard.funnelChart, 'Status funnel') }}
 </div>

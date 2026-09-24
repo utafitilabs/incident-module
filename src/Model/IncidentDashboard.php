@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Uhifadhi\Incident\Model;
 
+use Uhifadhi\Bundle\AtlasBundle\Model\AtlasChart;
 use Uhifadhi\Bundle\AtlasBundle\Model\AtlasMap;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Entity\TaxonomyKind;
@@ -256,5 +257,97 @@ final readonly class IncidentDashboard
     public function severitiesWorstFirst(): array
     {
         return array_reverse(IncidentSeverityEnum::ordered());
+    }
+
+    /*
+     * ── THE CHARTS, STATED FOR THE ATLAS ──────────────────────────────────
+     *
+     * A widget partial asks for the chart it draws and writes one line of
+     * Twig. The arithmetic is {@see IncidentCharts}'s and the drawing is the
+     * atlas's; nothing between them is this module's, which is the whole of
+     * why the module ships no chart markup and no chart stylesheet.
+     */
+
+    /** Six months of filings — the line the map cannot draw. */
+    public function trendChart(): AtlasChart
+    {
+        $months = array_keys($this->monthlyCounts);
+        $span = '';
+        if ([] !== $months) {
+            $first = new \DateTimeImmutable($months[0].'-01');
+            $last = new \DateTimeImmutable($months[\count($months) - 1].'-01');
+            $span = ' · '.strtolower($first->format('M')).'–'.strtolower($last->format('M')).' '.$last->format('Y');
+        }
+
+        return IncidentCharts::trend($this->monthlyCounts, 'filed per month'.$span);
+    }
+
+    /** How serious the window's incidents are, worst level first. */
+    public function severityChart(): AtlasChart
+    {
+        $counts = [];
+        foreach ($this->severitiesWorstFirst() as $level) {
+            $counts[$level->label()] = $this->severityCount($level);
+        }
+
+        return IncidentCharts::severity($counts, $this->window('set at verification'));
+    }
+
+    /** How many of the window's incidents REACHED each state, in workflow order. */
+    public function funnelChart(): AtlasChart
+    {
+        $reached = $this->reachedCounts();
+
+        $labelled = [];
+        foreach ($this->places() as $place) {
+            $labelled[$place->label()] = $reached[$place->value] ?? 0;
+        }
+
+        return IncidentCharts::funnel($labelled, \sprintf('this window\u{2019}s %d incidents', $this->filedCount));
+    }
+
+    /** Incidents by the zone they fall in; a point in no zone is its own row. */
+    public function zoneChart(): AtlasChart
+    {
+        return IncidentCharts::zones($this->zoneCounts, $this->window());
+    }
+
+    /**
+     * The window's mix by kind, as parts of a whole. The period is the window
+     * the page is reading, named the way every other tab on this surface names
+     * it, so the one band's axis says what it is a share OF.
+     */
+    public function kindShareChart(): AtlasChart
+    {
+        $shares = [];
+        foreach ($this->kindShares() as $share) {
+            $shares[] = [
+                'label' => $share['kind']->getLabel(),
+                'cat' => $share['kind']->catIndex(),
+                'count' => $share['count'],
+            ];
+        }
+
+        $period = null === $this->filter->from ? 'this window' : strtolower($this->filter->from->format('F Y'));
+
+        return IncidentCharts::kindShare($period, $shares, $this->window(\sprintf('%d filed', $this->filedCount)));
+    }
+
+    /**
+     * WHAT A CHART'S TAB SAYS IT IS ABOUT — the window the page is reading,
+     * and whatever else that one chart has to qualify itself with. Said once
+     * here, so five tabs cannot describe the same window five ways.
+     */
+    private function window(string $qualifier = ''): string
+    {
+        $parts = [];
+        if (null !== $this->filter->from) {
+            $parts[] = strtolower($this->filter->from->format('F Y'));
+        }
+        if ('' !== $qualifier) {
+            $parts[] = $qualifier;
+        }
+
+        return implode(' · ', $parts);
     }
 }

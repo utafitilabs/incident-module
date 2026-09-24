@@ -3,25 +3,15 @@
    Zones are presence-driven and do not overlap, so an incident falls in exactly
    one and the counts add up to the window. A point in NO zone is a row of its own
    ("unzoned") rather than a dropped record: an organization that has drawn no
-   zones at all is the normal state. #}
-{% set rows = dashboard.zoneCounts %}
-{% set most = rows is empty ? 1 : max(rows) %}
+   zones at all is the normal state.
+
+   THE DRAWING IS THE ATLAS'S. A window nobody filed in has no axis, and the
+   component says so in the house's own words — so this partial carries no empty
+   state of its own. #}
 <div class="c" data-w="zones">
-    <span class="tab">Incidents by zone<span class="src">· {{ dashboard.filter.from ? dashboard.filter.from|date('F Y')|lower }}</span></span>
-    {% if rows is empty %}
-        <div class="use">Nothing to place. No incident was filed in this window.</div>
-    {% else %}
-        <svg class="ch" viewBox="0 0 470 {{ 12 + rows|length * 24 }}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Incidents by zone">
-            <line class="grid" x1="118" y1="4" x2="118" y2="{{ 8 + rows|length * 24 }}"/>
-            {% for zone, count in rows %}
-                {% set y = 12 + loop.index0 * 24 %}
-                <text x="112" y="{{ y + 12 }}" text-anchor="end">{{ zone is empty ? 'unzoned' : zone }}</text>
-                {# The design ramps bar opacity by rank — the busiest zone is the most
-                   solid, fading down the list — rather than one flat tone. #}
-                <rect x="118" y="{{ y }}" width="{{ (count / most * 322)|round }}" height="15" rx="3" fill="var(--acc)" opacity="{{ max(0.41, 0.95 - loop.index0 * 0.09)|number_format(2) }}"><title>{{ count }} in {{ zone is empty ? 'no zone' : zone }}</title></rect>
-                <text class="anno" x="{{ 124 + (count / most * 322)|round }}" y="{{ y + 12 }}">{{ count }}</text>
-            {% endfor %}
-        </svg>
-    {% endif %}
-    <div class="use">Zones are presence-driven and do not overlap, so an incident falls in exactly one — the counts add up to the window.</div>
+    {{ atlas_chart(
+        dashboard.zoneChart,
+        'Incidents by zone',
+        'Zones are presence-driven and do not overlap, so an incident falls in exactly one — the counts add up to the window.'
+    ) }}
 </div>

@@ -39,6 +39,12 @@ final class ModuleDeclaresNoColourTest extends TestCase
      * must resolve the position rather than name a hue, because they draw the
      * SAME fact: this row, this arc, this pin and this square are one kind.
      *
+     * A CHART BAND IS NOT IN THIS LIST, and that is the point: it reads the
+     * same position through the atlas's own door — the series states the
+     * category and the component resolves it — so there is no rule here to
+     * keep in step. The donut arc and the legend square that used to be
+     * listed went with the hand-drawn SVG.
+     *
      * THREE OF THEM CARRY A CONTEXT. A pane that states its own `.dot`
      * background — the kinds strip, the kinds widget, the taxonomy manager —
      * out-ranks a bare `.i-hue` by specificity, so the token has to be spent
@@ -49,8 +55,6 @@ final class ModuleDeclaresNoColourTest extends TestCase
     private const array MARK_RULES = [
         'incidents.css' => [
             '.i-cat[data-cat]',      // the register chip's border
-            '.ch .arc[data-cat]',    // a donut arc
-            '.legend i[data-cat]',   // a legend square
             '.i-dot[data-cat]',      // the dot inside a filter option
             '.kx-h .dot[data-cat]',  // the kinds widget's card head
             '.krow i.dot[data-cat]', // a row of the kinds strip

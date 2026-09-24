@@ -7,18 +7,7 @@
    first so the eye lands on the worst of the month
    ({@see IncidentDashboard::severitiesWorstFirst}).
 
-   The drawing is the chart layer's ({@see _charts.html.twig}); this partial reads
-   the count at each level and hands over labelled bars. #}
-{% import '@UhifadhiIncident/dashboard/_charts.html.twig' as charts %}
-<div class="c chartcard" data-w="severity">
-    <span class="tab">By severity<span class="src">{% if dashboard.filter.from %}· {{ dashboard.filter.from|date('F Y')|lower }} {% endif %}· set at verification</span></span>
-    {% set bars = [] %}
-    {% for level in dashboard.severitiesWorstFirst %}
-        {% set bars = bars|merge([{
-            label: level.label,
-            value: dashboard.severityCount(level),
-            title: level.label ~ ': ' ~ dashboard.severityCount(level),
-        }]) %}
-    {% endfor %}
-    {{ charts.bars(bars) }}
+   THE DRAWING IS THE ATLAS'S: this partial names the chart and nothing else. #}
+<div class="c" data-w="severity">
+    {{ atlas_chart(dashboard.severityChart, 'By severity') }}
 </div>

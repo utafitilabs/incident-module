@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Uhifadhi\Incident\Tests\Functional;
 
+use Symfony\Component\DomCrawler\Crawler;
 use Uhifadhi\Incident\Enum\IncidentSeverityEnum;
 
 /**
@@ -264,10 +265,13 @@ final class DashboardPageTest extends FunctionalTestCase
     }
 
     /**
-     * THE THREE MAP-FIRST CHARTS DRAW THEIR SVG FROM REAL ROWS. Each is data-
-     * driven — the trend line plots a point, the category donut draws an arc, and
-     * the severity bars draw a rectangle — so a widget that hard-coded the design's
-     * numbers, or referenced a figure the model does not carry, fails here.
+     * THE MAP-FIRST CHARTS REACH THE ATLAS WITH REAL ROWS.
+     *
+     * THE DRAWING IS NOT THIS MODULE'S ANY MORE, so what is asserted is not a
+     * path or an arc: it is that each widget hands the component a chart, and
+     * that the figures crossing to the browser are the ones these two filings
+     * made. A widget that hard-coded the design's numbers, or named a figure
+     * the model does not carry, still fails here.
      */
     public function testTheMapFirstChartsDrawFromData(): void
     {
@@ -280,19 +284,50 @@ final class DashboardPageTest extends FunctionalTestCase
         $crawler = $this->client->request('GET', \sprintf('/areas/%s/modules/incidents/widgets', $this->uuidOf($area)));
 
         self::assertResponseIsSuccessful();
-        // The trend line is a chart card holding a line path.
-        self::assertGreaterThan(0, $crawler->filter('[data-w="trend"] svg.ch path.ln')->count());
-        // The category donut draws one arc per kind filed this month, over a total.
-        self::assertGreaterThan(0, $crawler->filter('[data-w="bycat"] svg.ch circle.arc')->count());
-        self::assertStringContainsString('2', $crawler->filter('[data-w="bycat"] text.big')->text());
-        // The severity bars draw one rectangle per level, and the model now has
-        // four — every level present even at zero, so the bars never collapse.
-        // (The widgets page renders the widget twice: library preview + grid.)
-        self::assertCount(4, $crawler->filter('[data-w="severity"]')->first()->filter('svg.ch rect'));
-        // Every chart is an equal-height card in the Map first grid.
-        self::assertGreaterThan(0, $crawler->filter('[data-w="trend"].chartcard')->count());
-        self::assertGreaterThan(0, $crawler->filter('[data-w="bycat"].chartcard')->count());
-        self::assertGreaterThan(0, $crawler->filter('[data-w="severity"].chartcard')->count());
+
+        // Each of the three is the atlas's chart card, not markup of this
+        // module's: the plate, its fixed box and the library's canvas in it.
+        foreach (['trend', 'bycat', 'severity'] as $widget) {
+            self::assertGreaterThan(
+                0,
+                $crawler->filter(\sprintf('[data-w="%s"] .chart-plate .chart-box canvas', $widget))->count(),
+                $widget.' draws through atlas_chart(), or it draws nothing.',
+            );
+        }
+
+        // THE TWO KINDS FILED ARE THE TWO BANDS OF THE SHARE, each carrying its
+        // own category rather than a colour this module picked.
+        $share = $this->chartView($crawler, 'bycat');
+        self::assertCount(2, $share['datasets']);
+        self::assertSame('var(--cat-1)', $share['datasets'][0]['backgroundColor']);
+
+        // And the severity chart states every level the model has, even at
+        // nought, so the bars never collapse on a calm month.
+        $severity = $this->chartView($crawler, 'severity');
+        self::assertCount(4, $severity['labels']);
+        self::assertEqualsWithDelta(2.0, array_sum($severity['datasets'][0]['data']), 0.0001);
+    }
+
+    /**
+     * WHAT ONE WIDGET'S CHART ACTUALLY SENDS THE BROWSER — the view UX Chart.js
+     * writes onto its canvas, which is the one place a figure computed in PHP
+     * becomes a figure a reader sees.
+     *
+     * @return array{labels: list<string>, datasets: list<array{data: list<float>, backgroundColor: string}>}
+     *
+     * @see vendor/symfony/ux-chartjs/src/Model/Chart.php — createView() wraps the
+     *      data in {type, data, options}; what a module stated is under `data`
+     */
+    private function chartView(Crawler $crawler, string $widget): array
+    {
+        $canvas = $crawler->filter(\sprintf('[data-w="%s"] .chart-plate canvas', $widget))->first();
+        $payload = $canvas->attr('data-symfony--ux-chartjs--chart-view-value');
+        self::assertIsString($payload, 'The canvas carries the chart the module stated.');
+
+        /** @var array{data: array{labels: list<string>, datasets: list<array{data: list<float>, backgroundColor: string}>}} $view */
+        $view = json_decode($payload, true, 512, \JSON_THROW_ON_ERROR);
+
+        return $view['data'];
     }
 
     /**

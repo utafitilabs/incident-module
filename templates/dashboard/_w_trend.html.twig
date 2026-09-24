@@ -7,19 +7,11 @@
    the category chips, the lens and the search narrow the line the same way they
    narrow the register.
 
-   The drawing is the chart layer's ({@see _charts.html.twig}); this partial
-   fetches the months and hands them over as a labelled series. #}
-{% import '@UhifadhiIncident/dashboard/_charts.html.twig' as charts %}
-{% set months = dashboard.monthlyCounts %}
-<div class="c chartcard" data-w="trend">
-    <span class="tab">Incidents over time<span class="src">· filed per month{% if months is not empty %} · {{ (months|keys|first ~ '-01')|date('M')|lower }}–{{ (months|keys|last ~ '-01')|date('M')|lower }} {{ (months|keys|last ~ '-01')|date('Y') }}{% endif %}</span></span>
-    {% set series = [] %}
-    {% for key, count in months %}
-        {% set series = series|merge([{
-            label: (key ~ '-01')|date('M')|lower,
-            value: count,
-            title: (key ~ '-01')|date('F') ~ ': ' ~ count,
-        }]) %}
-    {% endfor %}
-    {% if series is not empty %}{{ charts.line(series) }}{% endif %}
+   THE DRAWING IS THE ATLAS'S. This module states a kind and a series
+   ({@see IncidentDashboard::trendChart}) and writes one line of Twig; the
+   colours, the grid, the axes, the legend and the height are the component's,
+   so this line and every other line in the product read the same way. It drew
+   its own SVG until the ruling that the atlas owns every module visual. #}
+<div class="c" data-w="trend">
+    {{ atlas_chart(dashboard.trendChart, 'Incidents over time') }}
 </div>

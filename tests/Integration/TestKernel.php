@@ -25,6 +25,7 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\UX\Chartjs\ChartjsBundle;
 use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\Map\UXMapBundle;
 use Symfony\UX\StimulusBundle\StimulusBundle;
@@ -118,6 +119,12 @@ final class TestKernel extends Kernel
         // an installation that draws a map registers both — and every incident
         // screen with a map renders through the configured renderer.
         yield new UXMapBundle();
+        // AND CHART.JS, on exactly the same terms. The atlas registers its
+        // chart component only where the library it stands on is registered
+        // (AtlasBundle::loadExtension reads kernel.bundles for 'ChartjsBundle'),
+        // so a kernel without this yields a page whose `atlas_chart()` call
+        // resolves to no runtime — which is what an installation would see.
+        yield new ChartjsBundle();
         // The maps: this module's base template links the atlas's map sheet by
         // the constant the bundle publishes, and an installation that draws an
         // incident's position has it.

@@ -40,9 +40,11 @@
    that list is published as `data-cat="1".."9"` on the markup
    ({@see Uhifadhi\Incident\Entity\TaxonomyKind::catIndex()}), the shell's
    `[data-cat="n"]` rules resolve it to `--cat`, and every mark below — the
-   chip, the dot, the donut arc, the legend square, the card's id row, the
-   matrix row and the map pin — reads that one variable. Nothing here knows a
-   hue, and reordering the kinds moves the hues with them.
+   chip, the dot, the card's id row, the matrix row and the map pin — reads
+   that one variable. Nothing here knows a hue, and reordering the kinds moves
+   the hues with them. A CHART BAND READS THE SAME POSITION by a different
+   door: its series states the category and the atlas resolves it where the
+   chart is drawn, so a band, a chip and a pin still cannot drift apart.
 
    MONEY IS NOT A CATEGORY. It takes the accent, and the amount's own state
    (paid, due, nil) says the rest in --ok/--warn/--dim.
@@ -66,47 +68,16 @@
 .i-cat.ghost i{background:var(--dim)}
 
 /* ── CHARTS ────────────────────────────────────────────────────────────────
-   The chart vocabulary the map-first widgets draw in — the line, the donut and
-   the bars — ported byte-faithfully from the design's uhifadhi.css.
+   NOT HERE. Every chart on this surface is drawn by the atlas's chart
+   component — `atlas_chart()` — and its sheet is the atlas's, linked in every
+   head by the shell. This module states a kind, an axis and its series and
+   declares no chart class and no chart token at all.
 
-   THE FURNITURE IS THE SHELL'S NOW. The frame, the tick labels, the gridlines
-   and the axis were restated here while the chain did not ship them, marked as
-   a loan rather than left accidental; core f77b375 collected them, so the four
-   rules that said the same thing are gone. What is left below is this module's
-   own: the marks a line, an arc and an annotation are drawn with.  */
-.ch text.anno{fill:var(--tx);font-size:7.5px}
-.ch text.annoS{fill:var(--fog);font-size:6.9px}
-.ch text.big{font-size:20px;fill:var(--tx);font-weight:700}
-.ch .ln{fill:none;stroke:var(--acc);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
-.ch .lnfill{fill:color-mix(in srgb,var(--acc) 14%,transparent);stroke:none}
-.ch .dot{fill:var(--acc)}
-.ch .arc{fill:none;stroke-width:20;stroke-linecap:butt}
-.ch .track{fill:none;stroke-width:20;stroke:color-mix(in srgb,var(--fog) 18%,transparent)}
-/* A CHART CARD IS A FIXED HEIGHT so a grid of them lines up — the card and its
-   plotted content both. The tab and the footnote hold their size; the chart
-   itself takes the rest, and a donut centres in it. */
-.chartcard{display:flex;flex-direction:column;height:320px}
-.chartcard>.tab{flex:none}
-.chartcard>.use{flex:none;margin-top:10px}
-.chartcard>.ch{flex:1 1 auto;min-height:0;height:auto}
-.chartcard .ch-donut{flex:1 1 auto;min-height:0;justify-content:center}
-.ch-donut{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-.ch-donut .ch{flex:none}
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-family:"JetBrains Mono",ui-monospace,monospace;
-  font-size:8.5px;color:var(--fog);margin-top:8px;align-items:center}
-.legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:-1px}
-/* A vertical legend for a donut: one row per segment, count and share pushed
-   apart from the label. */
-.legend.legend-v{flex-direction:column;gap:8px;margin-top:0;align-items:stretch;min-width:118px}
-.legend.legend-v span{display:flex;align-items:center;gap:0;color:var(--fog)}
-.legend.legend-v b{color:var(--tx);font-weight:700;margin-left:auto}
-.legend.legend-v em{font-style:normal;color:var(--dim);min-width:34px;text-align:right}
-/* THE ONLY MODULE-SPECIFIC CHART RULES: the donut's arcs and the legend's
-   swatches read the SAME resolved position the map pin and the register chip
-   read, so an arc, a square and a pin can never drift apart. The shapes stay
-   generic in the shell's sheet; only the indirection is stated here. */
-.ch .arc[data-cat]{stroke:var(--cat)}
-.legend i[data-cat]{background:var(--cat)}
+   WHAT USED TO BE HERE. The line's stroke, the donut's arcs and track, the
+   annotations, the vertical legend and a `.chartcard` that clamped the box to
+   320px — the marks a hand-drawn `<svg class="ch">` needed. They went with the
+   SVG. A chart's box is `--chart-height` on the component now, and a band's
+   hue is the category its series states, resolved where the chart is drawn.  */
 /* The sub-category, when a page shows the full path. Never bolder than its parent. */
 .i-sub{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10px;color:var(--fog);
   letter-spacing:.02em;white-space:nowrap}

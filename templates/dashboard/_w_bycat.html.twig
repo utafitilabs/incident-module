@@ -1,26 +1,14 @@
 {# IN·08 — the month's mix by kind of incident, as a share of the whole.
 
-   The same four hues the map paints an incident with, read here as arcs of one
-   ring: the donut, the legend and the map are one palette, so a colour means the
-   same thing wherever it is drawn. Biggest share first; a kind with nothing filed
-   this month is left out rather than drawn as a zero arc
-   ({@see IncidentDashboard::categoryShares}).
+   PARTS OF A WHOLE, over the one period the page is about: a band per kind,
+   biggest first, and each band wears its KIND'S OWN CATEGORY — the same position
+   the map pin and the register chip read, so a band, a square and a pin can never
+   drift apart. A kind with nothing filed this month is left out rather than drawn
+   as a zero band ({@see IncidentDashboard::kindShares}).
 
-   The drawing is the chart layer's ({@see _charts.html.twig}); this partial turns
-   the shares into labelled segments and centres the month's total. #}
-{% import '@UhifadhiIncident/dashboard/_charts.html.twig' as charts %}
-{% set shares = dashboard.kindShares %}
-<div class="c chartcard" data-w="bycat">
-    <span class="tab">By category<span class="src">{% if dashboard.filter.from %}· {{ dashboard.filter.from|date('F Y')|lower }} {% endif %}· {{ dashboard.filedCount }} filed</span></span>
-    {% set segments = [] %}
-    {% for share in shares %}
-        {% set segments = segments|merge([{
-            label: share.kind.label,
-            cat: share.kind.catIndex,
-            count: share.count,
-        }]) %}
-    {% endfor %}
-    <div class="ch-donut">
-        {{ charts.donut(segments, dashboard.filedCount) }}
-    </div>
+   THE DRAWING IS THE ATLAS'S. The module says what its series is; what a share
+   LOOKS like is one decision made in the component, which is why this surface no
+   longer computes arc lengths of its own. #}
+<div class="c" data-w="bycat">
+    {{ atlas_chart(dashboard.kindShareChart, 'By category') }}
 </div>
