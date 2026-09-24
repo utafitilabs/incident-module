@@ -252,7 +252,10 @@ final class IncidentContentProviderTest extends IntegrationTestCase
             }
         }
 
-        self::assertSame(DemoMonth::RECENT_COUNT, $inThisMonth);
+        // At LEAST the recent rows: when the month is older than three weeks the
+        // recent window starts three weeks back and the older rows that fill the
+        // days before it still fall inside this month.
+        self::assertGreaterThanOrEqual(DemoMonth::RECENT_COUNT, $inThisMonth);
     }
 
     /** And nothing is filed in the future, whatever day of the month it is run on. */
