@@ -205,16 +205,6 @@ class Incident
     private ?string $sourceRecordUrl = null;
 
     /**
-     * The answers to {@see TaxonomySubcategory::getFieldSet()}, keyed by field.
-     * A field the sub-category does not ask for is not stored, so changing a
-     * deployment's field set never leaves ghosts on old records.
-     *
-     * @var array<string, string>
-     */
-    #[ORM\Column(type: 'json')]
-    private array $details = [];
-
-    /**
      * THE ANSWERS TO THE QUESTIONS THE SUB-CATEGORY'S BEHAVIOUR BLOCKS ASK, kept
      * per block, in the shape the block asks in: a block whose questions are asked
      * once keeps `{key: answer}`, and a block that is a row the filer adds to keeps
@@ -595,32 +585,6 @@ class Incident
     public function hasProvenance(): bool
     {
         return null !== $this->sourceRecordUuid;
-    }
-
-    /** @return array<string, string> */
-    public function getDetails(): array
-    {
-        return $this->details;
-    }
-
-    /**
-     * The answers, filtered to the fields this sub-category actually asks for —
-     * so a re-categorised incident never carries a stale field into its new form.
-     *
-     * @param array<string, string> $details
-     */
-    public function setDetails(array $details): static
-    {
-        $asked = array_column($this->subcategory->getFieldSet(), 'key');
-        $kept = [];
-        foreach ($details as $key => $value) {
-            if (\in_array($key, $asked, true)) {
-                $kept[$key] = $value;
-            }
-        }
-        $this->details = $kept;
-
-        return $this;
     }
 
     /**

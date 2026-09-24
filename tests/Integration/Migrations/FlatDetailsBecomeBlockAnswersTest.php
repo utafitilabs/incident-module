@@ -40,6 +40,9 @@ final class FlatDetailsBecomeBlockAnswersTest extends MigrationsTestCase
     /** The version the flat shape is written at — the last one before the move. */
     private const string BEFORE_THE_BLOCKS = 'Uhifadhi\Incident\Migrations\Version20260911140000';
 
+    /** The last version that still has `incident.details` on the table. */
+    private const string BEFORE_THE_DROP = 'Uhifadhi\Incident\Migrations\Version20260921000000';
+
     /** The answers one incident carries under a flat name per question. */
     private const array FLAT_DETAILS = [
         'species' => 'Lion',
@@ -153,16 +156,21 @@ final class FlatDetailsBecomeBlockAnswersTest extends MigrationsTestCase
     }
 
     /**
-     * A KEY WITH NO BLOCK TO GO TO IS NOT THROWN AWAY. It stays in the column
-     * this release keeps, where an installation can still read what a record
-     * said — and the release that drops the column is the one that has to say so.
+     * A KEY WITH NO BLOCK TO GO TO IS NOT THROWN AWAY BY THIS VERSION. It stays
+     * in the column, where an installation can still read what a record said,
+     * for as long as the column is there.
+     *
+     * SO THIS READS AT THE LAST VERSION BEFORE THE DROP, not at latest.
+     * {@see \Uhifadhi\Incident\Migrations\Version20260924000000} takes the
+     * column away, and with it every answer that never had a block to go to —
+     * which is the thing that version exists to say out loud.
      */
     public function testAnAnswerWithNoBlockToGoToStaysWhereItWas(): void
     {
         $this->migrateTo(self::BEFORE_THE_BLOCKS);
         $this->seedTheFlatShape();
 
-        $this->migrateToLatest();
+        $this->migrateTo(self::BEFORE_THE_DROP);
 
         $details = $this->connection()->fetchOne('SELECT details FROM incident');
         self::assertIsString($details);
