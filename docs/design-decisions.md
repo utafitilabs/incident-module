@@ -7,6 +7,9 @@ an accident, and nobody "fixes" one without knowing what it was for.
 ## Contents
 
 - [The flat answer bag is dropped, not kept nullable](#the-flat-answer-bag-is-dropped-not-kept-nullable)
+- [Every chart is the atlas's, and a share is a stacked band](#every-chart-is-the-atlass-and-a-share-is-a-stacked-band)
+- [The calendar is fed from the window's own rows, not from a feed of its own](#the-calendar-is-fed-from-the-windows-own-rows-not-from-a-feed-of-its-own)
+- [A calendar mark cannot wear its kind's hue](#a-calendar-mark-cannot-wear-its-kinds-hue)
 
 ## The flat answer bag is dropped, not kept nullable
 
@@ -35,3 +38,71 @@ is the deferral working, not drift.
 
 **Reopens when** a sub-category needs an answer that belongs to no block. That
 is a new column with a new meaning, not this one coming back.
+
+## Every chart is the atlas's, and a share is a stacked band
+
+**Decision.** The five readings this dashboard used to draw as hand-rolled
+`<svg class="ch">` — the trend line, the severity bars, the category share, the
+status funnel and the zone bars — are stated as `AtlasChart`s
+(`Uhifadhi\Incident\Model\IncidentCharts`) and drawn by `atlas_chart()`. The
+macro file that held the arithmetic is deleted, not deprecated: nothing outside
+this module ever imported it.
+
+**Why.** Ruled: the atlas is the component library for every module visual, and
+a module feeds data rather than drawing. Two modules that each own their line's
+tension, grid and colours produce two products.
+
+**The one thing that changed shape: the donut.** `ChartKind` has four shapes
+and `pie` is deliberately not one of them — "a decision about presentation that
+no module gets to make". So the month's mix is a **stacked band over one
+period**: parts of a whole, one band per kind, each band wearing its kind's own
+category, with the legend the component draws. The reading is the same and the
+picture is not a ring.
+
+**What went with it.** The vertical donut legend printing each kind's count and
+percentage. The component's legend names the bands; a count per band is not
+something `atlas_chart()` states today.
+
+**Reopens when** the atlas grows a way to print a figure against a legend row,
+or a share shape of its own. Either is a change in the atlas, and the module
+picks it up by stating the same series.
+
+## The calendar is fed from the window's own rows, not from a feed of its own
+
+**Decision.** `IncidentCalendar::forWindow()` turns the incidents the dashboard
+already loaded into a `CalendarMonth`, hung on `IncidentDashboard`. This module
+implements **no** `Uhifadhi\Contracts\Atlas\CalendarFeedInterface`.
+
+**Why.** One filter drives the map, the register and every chart on this
+surface, and it has to drive the month too: a calendar that ran its own query
+could show a day the register beside it does not. A feed answers
+`month(YearMonth, ?string $scope)` on its own terms, which is exactly the second
+answer this dashboard exists to avoid.
+
+**The cost, stated.** The month cannot be stepped from inside the card. The
+stepper's arrows are drawn and not offered, and the month is changed on the
+shared filter row — which is what the design (IN·20) draws.
+
+**Reopens when** a surface outside this dashboard wants an incidents month — a
+handset, an org-wide calendar, another module's page. That surface has no
+dashboard to read, so it needs the feed, and the feed is then implemented
+alongside this rather than instead of it.
+
+## A calendar mark cannot wear its kind's hue
+
+**Decision.** Every mark on the incidents calendar wears `PillHue::Subject`.
+The kind is in the mark's hover text instead.
+
+**Why.** The design paints each mark with its kind's hue, the same position the
+map pin and the register chip read. `Uhifadhi\Contracts\Atlas\PillHue`
+publishes five **roles** — subject, good, attention, problem, quiet — and no
+category, so a kind cannot be stated through it. Reaching a colour by calling
+poaching `Good` would be this module lying about what a role means, and a hue
+this module picked is a hue that is wrong in two of the three palettes.
+
+**This is a gap in the contract, not a choice.** It is raised there rather than
+worked around here.
+
+**Reopens when** `CalendarPill` can carry a category the way `ChartSeries`
+carries `cat`. The module then states the kind's position and the marks match
+the pins again with no further change here.

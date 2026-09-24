@@ -43,17 +43,18 @@ final class IncidentWidgetsTest extends TestCase
     }
 
     /**
-     * Twenty-one widgets, including the three charts the design added to Map first —
-     * the trend line, the category donut and the severity bars — beside the zone
-     * chart they share a two-by-two grid with.
+     * Twenty-two widgets, including the three charts the design added to Map first —
+     * the trend line, the category share and the severity bars — beside the zone
+     * chart they share a two-by-two grid with, and the month (IN·20) that answers
+     * WHEN the way the plate answers WHERE.
      */
-    public function testItShipsTheTwentyOneWidgetsTheDesignDeclares(): void
+    public function testItShipsTheTwentyTwoWidgetsTheDesignDeclares(): void
     {
         // Declaration order IS the shipped composition's order, so the map leads
         // just below the KPIs — second, before the register — even though it is
         // filed under Map first (group 'b') in the library.
         self::assertSame([
-            'kpis', 'map', 'register', 'kinds', 'queue', 'report',
+            'kpis', 'map', 'register', 'kinds', 'cal', 'queue', 'report',
             'maplist', 'zones', 'trend', 'bycat', 'severity',
             'spark', 'feed', 'evidence',
             'categories', 'matrix', 'money',
@@ -125,7 +126,10 @@ final class IncidentWidgetsTest extends TestCase
     {
         $catalog = IncidentWidgets::declaration();
 
-        self::assertSame(['kpis' => 12, 'map' => 12, 'register' => 12, 'kinds' => 12, 'money' => 12], $catalog->defaultLayout());
+        self::assertSame(
+            ['kpis' => 12, 'map' => 12, 'register' => 12, 'kinds' => 12, 'cal' => 12, 'money' => 12],
+            $catalog->defaultLayout(),
+        );
         self::assertSame(WidgetCatalog::DEFAULT_PRESET_ID, $catalog->defaultPresetId());
 
         $shipped = $catalog->preset(WidgetCatalog::DEFAULT_PRESET_ID);

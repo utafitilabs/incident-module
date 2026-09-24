@@ -1,0 +1,25 @@
+{# IN·20 — the month, with one mark per incident.
+
+   FILLED IS OPEN AND HOLLOW IS CLOSED — the same reading the map plate uses, so
+   a mark means one thing across the product. Clicking a mark opens the case
+   file; "+N more" and the day itself lead to the register showing this window.
+
+   THE MONTH COMES FROM THE SHARED FILTER ROW and this card has no control of
+   its own: the stepper's arrows are drawn and not offered, because stepping
+   here would move the map, the register and every chart beside it without
+   saying so. Changing the month is the filter row's job
+   ({@see IncidentFilter::toQuery}, `month=YYYY-MM`).
+
+   THE GRID IS THE ATLAS'S. The day head, the cell, its fixed height, the day
+   number and the "+N more" are `atlas_calendar()`'s — which is the whole reason
+   a busy week cannot make this month taller than a quiet one. This module hands
+   over everything it has for a day ({@see IncidentCalendar}) and is never asked
+   how many marks fit. #}
+<div class="c" data-w="cal">
+    {{ atlas_calendar(
+        dashboard.calendar,
+        title: 'Incidents calendar',
+        today: now,
+        caption: 'Filled is open, hollow is closed. Clicking a mark opens the case file; the month is whatever the filter row is showing.'
+    ) }}
+</div>

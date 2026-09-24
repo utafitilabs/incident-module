@@ -62,6 +62,12 @@ final readonly class IncidentDashboardService
         private IncidentTransitionService $transitions,
         private IncidentMapService $map,
         /**
+         * THE MONTH, on the same terms as the map: the window's own rows turned
+         * into what the house calendar draws, so the grid and the register
+         * cannot disagree about a day.
+         */
+        private IncidentCalendar $calendar,
+        /**
          * WHAT AN ATTACHED FILE IS, in the platform's own words — the same mapping
          * the files hub reads, so an evidence tile on this dashboard and one on
          * /files never disagree about whether a picture was made.
@@ -102,6 +108,7 @@ final readonly class IncidentDashboardService
             // Every kind this area keeps states a row, so a legend reads the
             // same on a quiet month as on a busy one.
             map: $this->map->forArea($filter->area, $incidents, $kinds),
+            calendar: $this->calendar->forWindow($filter, $incidents, $now),
         );
     }
 

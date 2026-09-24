@@ -309,6 +309,39 @@ final class DashboardPageTest extends FunctionalTestCase
     }
 
     /**
+     * THE MONTH IS THE ATLAS'S GRID, FED BY THIS MODULE.
+     *
+     * One mark per incident filed in the window, in the cell for the day it was
+     * filed on, leading to its case file — and the grid, the day heads and the
+     * cell's fixed height are the component's. A module that laid out its own
+     * month would pass every assertion above and still have to decide how many
+     * marks fit in a square, which it cannot know.
+     */
+    public function testTheCalendarDrawsAMarkPerFiling(): void
+    {
+        $area = $this->anAreaWithKinds();
+        $reporter = $this->aReporter();
+        $this->anIncident($area, 'snaring', 'Snare line lifted at the Acacia Wood forest edge', $reporter);
+        $this->anIncident($area, 'livestock-depredation', 'Lion killed four goats at Riverside', $reporter);
+        $this->client->loginUser($reporter);
+
+        $crawler = $this->client->request('GET', \sprintf('/areas/%s/modules/incidents', $this->uuidOf($area)));
+
+        self::assertResponseIsSuccessful();
+
+        // The component's own grid: whole weeks of cells, with the day heads
+        // above them. Five rows or six, never a ragged last line.
+        self::assertCount(7, $crawler->filter('[data-w="cal"] .cal .dh'));
+        self::assertGreaterThanOrEqual(35, $crawler->filter('[data-w="cal"] .cal .dc')->count());
+
+        // And this module's contribution: a mark per filing, each one a link
+        // into the case file it is about.
+        $marks = $crawler->filter('[data-w="cal"] .cal a.cal-mark');
+        self::assertCount(2, $marks);
+        self::assertStringContainsString('/modules/incidents/', (string) $marks->first()->attr('href'));
+    }
+
+    /**
      * WHAT ONE WIDGET'S CHART ACTUALLY SENDS THE BROWSER — the view UX Chart.js
      * writes onto its canvas, which is the one place a figure computed in PHP
      * becomes a figure a reader sees.

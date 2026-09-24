@@ -15,6 +15,7 @@ namespace Uhifadhi\Incident\Model;
 
 use Uhifadhi\Bundle\AtlasBundle\Model\AtlasChart;
 use Uhifadhi\Bundle\AtlasBundle\Model\AtlasMap;
+use Uhifadhi\Contracts\Atlas\CalendarMonth;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Entity\TaxonomyKind;
 use Uhifadhi\Incident\Enum\IncidentSeverityEnum;
@@ -58,6 +59,7 @@ final readonly class IncidentDashboard
      * @param list<FileEntry>                                                                                  $evidence       newest capture first, as the platform describes a file
      * @param IncidentRail|null                                                                                $rail           the one incident this person last touched, or null
      * @param AtlasMap                                                                                         $map            what every map on this screen draws, stated for the atlas
+     * @param CalendarMonth                                                                                    $calendar       the window's filings day by day, stated for the atlas
      */
     public function __construct(
         public IncidentFilter $filter,
@@ -83,6 +85,7 @@ final readonly class IncidentDashboard
         public ?IncidentRail $rail,
         public string $currency,
         public AtlasMap $map,
+        public CalendarMonth $calendar,
     ) {
     }
 

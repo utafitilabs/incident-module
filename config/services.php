@@ -36,6 +36,7 @@ use Uhifadhi\Incident\Repository\TaxonomySubcategoryRepository;
 use Uhifadhi\Incident\Service\AreaListBoardService;
 use Uhifadhi\Incident\Service\AreaListService;
 use Uhifadhi\Incident\Service\IncidentBlockAnswerService;
+use Uhifadhi\Incident\Service\IncidentCalendar;
 use Uhifadhi\Incident\Service\IncidentCaseService;
 use Uhifadhi\Incident\Service\IncidentDashboardService;
 use Uhifadhi\Incident\Service\IncidentEvidenceService;
@@ -105,12 +106,22 @@ return static function (ContainerConfigurator $container): void {
             service('router'),
         ]);
 
+    /*
+     * THE MONTH. The atlas draws every calendar in the product and this states
+     * what is in one; the router is here for the same reason it is on the map
+     * service — a mark leads to a case file, and the url is generated where the
+     * router is known rather than in a template.
+     */
+    $services->set('incident.calendar', IncidentCalendar::class)
+        ->args([service('router')]);
+
     $services->set('incident.dashboard', IncidentDashboardService::class)
         ->args([
             service(IncidentRepository::class),
             service(TaxonomyKindRepository::class),
             service('incident.transitions'),
             service('incident.map'),
+            service('incident.calendar'),
             service('incident.file_source'),
             param('incident.currency'),
         ]);

@@ -129,6 +129,14 @@ final class TheAtlasDrawsEveryVisualTest extends TestCase
         }
     }
 
+    /** AND THE MONTH IS THE COMPONENT'S TOO — IN·20 names a calendar, never a grid. */
+    public function testTheCalendarWidgetNamesTheComponent(): void
+    {
+        $markup = (string) file_get_contents(self::TEMPLATES.'/dashboard/_w_cal.html.twig');
+
+        self::assertStringContainsString('atlas_calendar(', $markup);
+    }
+
     /**
      * Every Twig file this module ships, by its path from `templates/`.
      *

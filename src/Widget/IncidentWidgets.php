@@ -122,6 +122,11 @@ final class IncidentWidgets implements WidgetSurfaceInterface
             // often each kind was filed this month; editing is one click away in
             // Configure, and never here.
             new Widget('kinds', 'Incident kinds', 'a', 12, [12, 9, 6], on: true, note: 'The kinds this area files, with this month\'s count under each and a mark on the sub-categories that carry money. Read only — editing is a click away in Configure.'),
+            // THE MONTH, drawn by the atlas's calendar component. Filed under
+            // Map first because it answers WHEN the way the plate answers
+            // WHERE, and on in the shipped composition: a month is how a
+            // supervisor sees a run of bad nights that a list of rows hides.
+            new Widget('cal', 'Incidents calendar', 'b', 12, [12, 9, 6], on: true, note: 'The month as a calendar, one mark per incident, filled while it is open.'),
             new Widget('queue', 'My queue', 'a', 12, [12, 9, 6], on: false, note: 'Only what is waiting on you, oldest first, with the clock against each one.'),
             // THE WAY IN TO THE REPORT FLOW, filed under Case files: that is the
             // direction of whoever keeps the register, and opening a new file is
