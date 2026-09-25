@@ -47,6 +47,12 @@ final class IncidentModuleProvider implements ModuleProviderInterface
         return self::SLUG;
     }
 
+    /** The one sentence the catalogue prints under the name — what the module is, for a stranger. */
+    public function description(): string
+    {
+        return 'Everything reported — from a patrol or walked in at a gate.';
+    }
+
     public function name(): string
     {
         return 'Incidents';

@@ -19,6 +19,11 @@ use Uhifadhi\Incident\Module\IncidentModuleProvider;
 
 final class IncidentModuleProviderTest extends TestCase
 {
+    public function testItSaysWhatItIsInOneSentence(): void
+    {
+        self::assertSame('Everything reported — from a patrol or walked in at a gate.', new IncidentModuleProvider('operations')->description());
+    }
+
     public function testDeclaresTheIncidentsModule(): void
     {
         $provider = new IncidentModuleProvider('operations');
