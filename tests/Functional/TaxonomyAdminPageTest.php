@@ -251,9 +251,8 @@ final class TaxonomyAdminPageTest extends FunctionalTestCase
         self::assertSame(720, $stored->getTermHours());
         self::assertSame('30 d', $stored->termLabel());
 
-        // NOTHING WRITES A FIELD LIST ANY MORE. The column is still on the table
-        // for one release, holding whatever it held; the editor cannot add to it.
-        self::assertSame([], $stored->getFieldSet());
+        // THERE IS NO FIELD LIST TO WRITE TO. A word's questions are its blocks'.
+        self::assertFalse(property_exists($stored, 'fieldSet'), 'A word still carries a list of questions of its own.');
     }
 
     /** The term is on the panel, and nothing on the panel asks for a field name. */

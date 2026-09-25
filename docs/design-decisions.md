@@ -7,6 +7,7 @@ an accident, and nobody "fixes" one without knowing what it was for.
 ## Contents
 
 - [The flat answer bag is dropped, not kept nullable](#the-flat-answer-bag-is-dropped-not-kept-nullable)
+- [A word's questions are its blocks', and the field list is dropped](#a-words-questions-are-its-blocks-and-the-field-list-is-dropped)
 - [Every chart is the atlas's, and a share is a stacked band](#every-chart-is-the-atlass-and-a-share-is-a-stacked-band)
 - [The calendar is fed from the window's own rows, not from a feed of its own](#the-calendar-is-fed-from-the-windows-own-rows-not-from-a-feed-of-its-own)
 - [A calendar mark cannot wear its kind's hue](#a-calendar-mark-cannot-wear-its-kinds-hue)
@@ -24,20 +25,31 @@ name per answer and could never hold "twelve snares, two carcasses, one
 bicycle" as the one record it is. Keeping the column nullable would leave a
 second, staler answer reachable while pretending it had gone.
 
-**Why now and not earlier.** The version that stopped writing it said in as
-many words that the release after it drops it, and kept it for one release so
-an installation could read what a record used to say and roll the code back.
-This is that release.
+**Why in 0.4.1 and not earlier.** The version that stopped writing it named
+it as what a later release drops, so an installation could read what a record
+used to say and roll the code back in between. 0.4.1 is that release.
 
-**What is deliberately still standing.**
-`incident_taxonomy_subcategory.field_set` was named beside `details` in the
-same deferral and is **not** dropped here. It is a decision of its own and
-rides its own version, so that a rollback of one is a rollback of one thing.
-Until it ships, `doctrine:migrations:diff` proposes dropping it — that proposal
-is the deferral working, not drift.
+**Its own version.** `incident_taxonomy_subcategory.field_set` was named beside
+`details` in the same deferral and is dropped by a version of its own — see the
+next decision — so that a rollback of one is a rollback of one thing.
 
 **Reopens when** a sub-category needs an answer that belongs to no block. That
 is a new column with a new meaning, not this one coming back.
+
+## A word's questions are its blocks', and the field list is dropped
+
+**Decision.** `incident_taxonomy_subcategory.field_set` is removed outright by
+`Version20260925000000`, on the 0.4 line after 0.4.1, together with the
+property that mapped it and its two accessors.
+
+**Why.** A sub-category asks exactly the questions of the behaviour blocks it
+switches on (`incident_taxonomy_subcategory.blocks`). A typed list of field
+names beside the blocks would let a word ask anything, and the kinds editor
+offers no way to write one (`TaxonomyAdminServiceTest` asserts it). Nothing has
+written the column since `Version20260912103000`, and nothing reads it.
+
+**Reopens when** an area needs a question no block asks. That is a new block,
+not a free-text field list coming back.
 
 ## Every chart is the atlas's, and a share is a stacked band
 

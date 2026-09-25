@@ -183,7 +183,7 @@ Again, `migrate` is the whole of it. New tables and columns arrive as versions
 in this package; `doctrine:migrations:diff` stays what you run for your own
 entities, and after this update it must report no changes. If it does report
 something, that is a bug in this package — please report it rather than
-committing the version it wrote. The one exception is named below.
+committing the version it wrote.
 
 ### Upgrading to 0.3: one taxonomy, and it is the area's
 
@@ -241,12 +241,13 @@ you; like the version above it moves data, so it is worth knowing what it does:
   "2 animals" under another) and a key no block asks for at all (`enclosure`,
   `crop`, `circumstances`, `signs` — they came from the retired free-text field
   list). Choosing a block answer for either would be writing the record.
-- **Nothing is dropped.** `incident.details` and
-  `incident_taxonomy_subcategory.field_set` are kept, still populated, for one
-  release — which is where those left-behind keys can still be read — and
-  `doctrine:migrations:diff` proposes dropping them both until the release that
-  does, in a version marked `@destructive`. That proposal is the deferral
-  working, not drift: do not apply it.
+- **Nothing is dropped by this version.** `incident.details` and
+  `incident_taxonomy_subcategory.field_set` are dropped by later versions on the
+  0.4 line, each marked `@destructive`: 0.4.1 drops `incident.details`
+  (`Version20260924000000`), and the left-behind keys go with it; the release
+  after it drops `field_set` (`Version20260925000000`). From there
+  `doctrine:migrations:diff` has nothing to propose. See
+  [Upgrading](docs/upgrading.md) for the dump to take first.
 - The figure is **not** backfilled from a money record. What a money record holds
   was written by whoever assessed or approved it, in a state past filing; dating
   somebody else's figure to a moment nobody recorded it at would be a lie about a

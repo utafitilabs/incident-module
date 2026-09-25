@@ -12,9 +12,9 @@ hand is a release with a note under it.
 - [0.4.0 — the shared taxonomy is dropped](#040--the-shared-taxonomy-is-dropped)
 - [0.4.0 — the PostGIS bundle is `utafitilabs/postgis-bundle` (BREAKING)](#040--the-postgis-bundle-is-utafitilabspostgis-bundle-breaking)
 - [0.4.0 — a kind's hue is its place in the list](#040--a-kinds-hue-is-its-place-in-the-list)
-- [0.5.0 — `incident.details` is dropped](#050--incidentdetails-is-dropped)
+- [0.4.1 — `incident.details` is dropped](#041--incidentdetails-is-dropped)
 - [Queued: 0.5.0 — `incident_taxonomy_kind.colour_key` is dropped](#queued-050--incident_taxonomy_kindcolour_key-is-dropped)
-- [Queued — `incident_taxonomy_subcategory.field_set` is dropped](#queued--incident_taxonomy_subcategoryfield_set-is-dropped)
+- [0.4 line — `incident_taxonomy_subcategory.field_set` is dropped](#04-line--incident_taxonomy_subcategoryfield_set-is-dropped)
 
 ## The rule for anything this module ships to a host
 
@@ -292,7 +292,7 @@ product has one palette.
 values stay**, so an installation can still read what each kind used to be set
 to, and a rollback to 0.3 finds them where it left them.
 
-## 0.5.0 — `incident.details` is dropped
+## 0.4.1 — `incident.details` is dropped
 
 **Take a dump first if you ever read the column yourself.**
 
@@ -324,14 +324,35 @@ object and tightens it, so a rollback lands on a schema the previous release
 can run. It does **not** put the answers back — they are not derivable from
 `block_answers`, and a guess written into a record is worse than a gap.
 
-## Queued — `incident_taxonomy_subcategory.field_set` is dropped
+## 0.4 line — `incident_taxonomy_subcategory.field_set` is dropped
 
-The other half of the deferral `Version20260912103000` opened, named here so it
-is collected rather than remembered. Nothing reads the column; **a later
-release ships a migration marked `@destructive` whose `up()` is
-`ALTER TABLE incident_taxonomy_subcategory DROP field_set`**, and drops the
-mapping in the same commit. It rides its own version rather than the one above,
-so that a rollback of either is a rollback of one thing.
+Ships in the first release on the 0.4 line after 0.4.1.
+
+**What changed.** `Uhifadhi\Incident\Migrations\Version20260925000000` runs
+`ALTER TABLE incident_taxonomy_subcategory DROP field_set`, marked
+`@destructive`. The property that mapped it, `TaxonomySubcategory::getFieldSet()`
+and `setFieldSet()` are gone with it. No index or constraint rode on the column.
+
+**Why.** A word's questions are the questions of the behaviour blocks it
+switches on — `incident_taxonomy_subcategory.blocks`. `Version20260912103000`
+stopped every write to this column and named it as what a later release drops;
+nothing on any screen read it. This version collects the second half of that
+deferral, in a version of its own, so that a rollback of either drop is a
+rollback of one thing.
+
+**If you read the column yourself**, take a dump before upgrading:
+
+```
+pg_dump -t incident_taxonomy_subcategory --data-only > subcategories-before-the-drop.sql
+```
+
+**Rolling back.** `down()` re-adds the column, fills every row with the empty
+list and tightens it, so a rollback lands on a schema the previous release can
+run. It does **not** put the lists back — they are not derivable from
+`blocks`.
+
+After this version `doctrine:migrations:diff` proposes nothing: every column
+`Version20260912103000` deferred has been dropped.
 
 ## Queued: 0.5.0 — `incident_taxonomy_kind.colour_key` is dropped
 

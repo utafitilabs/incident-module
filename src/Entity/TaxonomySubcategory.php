@@ -40,11 +40,11 @@ use Uhifadhi\Incident\Repository\TaxonomySubcategoryRepository;
  * claim is 30. One term for a whole area would be a lie about all three, which is
  * why the ageing widget reads the term off the row rather than off a setting.
  *
- * SO ARE THE QUESTIONS. {@see $fieldSet} is what the filing form asks for under
- * this word, in the order it draws them — a conflict asks for species, livestock
- * lost, enclosure and household; a roadkill asks for species, sex, age class and
- * road segment. One incident table, one form component, a field set per
- * sub-category.
+ * SO ARE THE QUESTIONS, AND THEY ARE THE BLOCKS'. The filing form asks under
+ * this word exactly what the blocks in {@see $blocks} ask — a roadkill that
+ * switches on species and a named place asks for species, sex, age class and the
+ * road segment. There is no list of field names beside the blocks: a word that
+ * could name its own fields could ask anything.
  *
  * WIRE-CODE, RETIREMENT, RENAMING — the same rules as {@see TaxonomyKind}: the
  * code never changes, retirement dims but keeps, nothing is deleted. Labels are
@@ -98,14 +98,6 @@ class TaxonomySubcategory
     /** The term THIS word promises, in hours. See the class docblock. */
     #[ORM\Column(options: ['default' => self::DEFAULT_TERM_HOURS])]
     private int $termHours = self::DEFAULT_TERM_HOURS;
-
-    /**
-     * The fields this kind of incident asks for, in the order the form draws them.
-     *
-     * @var list<array{key: string, label: string}>
-     */
-    #[ORM\Column(type: 'json')]
-    private array $fieldSet = [];
 
     #[ORM\Column(options: ['default' => 0])]
     private int $position = 0;
@@ -238,20 +230,6 @@ class TaxonomySubcategory
         return $this->termHours < 96
             ? \sprintf('%d h', $this->termHours)
             : \sprintf('%d d', intdiv($this->termHours, 24));
-    }
-
-    /** @return list<array{key: string, label: string}> */
-    public function getFieldSet(): array
-    {
-        return $this->fieldSet;
-    }
-
-    /** @param list<array{key: string, label: string}> $fieldSet */
-    public function setFieldSet(array $fieldSet): static
-    {
-        $this->fieldSet = $fieldSet;
-
-        return $this;
     }
 
     /** "conflict › livestock depredation" — the path chip on the detail page. */
