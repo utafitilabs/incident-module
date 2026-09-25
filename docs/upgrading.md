@@ -7,13 +7,13 @@ hand is a release with a note under it.
 ## Contents
 
 - [The rule for anything this module ships to a host](#the-rule-for-anything-this-module-ships-to-a-host)
-- [0.5.0 — four concerns, and two of them are sensitive (BREAKING)](#050--four-concerns-and-two-of-them-are-sensitive-breaking)
+- [0.4.1 — four concerns, and two of them are sensitive (BREAKING)](#041--four-concerns-and-two-of-them-are-sensitive-breaking)
 - [0.3.0 — the filter dropdowns became the shell's](#030--the-filter-dropdowns-became-the-shells)
 - [0.4.0 — the shared taxonomy is dropped](#040--the-shared-taxonomy-is-dropped)
 - [0.4.0 — the PostGIS bundle is `utafitilabs/postgis-bundle` (BREAKING)](#040--the-postgis-bundle-is-utafitilabspostgis-bundle-breaking)
 - [0.4.0 — a kind's hue is its place in the list](#040--a-kinds-hue-is-its-place-in-the-list)
 - [0.4.1 — `incident.details` is dropped](#041--incidentdetails-is-dropped)
-- [Queued: 0.5.0 — `incident_taxonomy_kind.colour_key` is dropped](#queued-050--incident_taxonomy_kindcolour_key-is-dropped)
+- [0.4 line — `incident_taxonomy_kind.colour_key` is dropped](#04-line--incident_taxonomy_kindcolour_key-is-dropped)
 - [0.4 line — `incident_taxonomy_subcategory.field_set` is dropped](#04-line--incident_taxonomy_subcategoryfield_set-is-dropped)
 
 ## The rule for anything this module ships to a host
@@ -26,7 +26,7 @@ a host's own `assets/controllers.json` entry when a package it already has is
 updated, so anything this package deletes in one step stays switched on over
 there with nothing behind it.
 
-## 0.5.0 — four concerns, and two of them are sensitive (BREAKING)
+## 0.4.1 — four concerns, and two of them are sensitive (BREAKING)
 
 **What changed.** The core replaced flat permission values with **(concern,
 verb) pairs**, and this module moved with it. The two values it used to
@@ -354,17 +354,10 @@ run. It does **not** put the lists back — they are not derivable from
 After this version `doctrine:migrations:diff` proposes nothing: every column
 `Version20260912103000` deferred has been dropped.
 
-## Queued: 0.5.0 — `incident_taxonomy_kind.colour_key` is dropped
+## 0.4 line — `incident_taxonomy_kind.colour_key` is dropped
 
-The deferral 0.4 opens, named here so it is collected rather than remembered.
-**0.5.0 ships a migration marked `@destructive` whose `up()` is
-`ALTER TABLE incident_taxonomy_kind DROP colour_key`**, and its release note
-tells an installation to `pg_dump -t incident_taxonomy_kind` first if it wants
-to keep what the column held.
-
-Until that version ships, `doctrine:migrations:diff` proposes dropping the
-column on every run, because the mapping let it go in 0.4. **That proposal is
-the deferral working — do not keep the file it writes.** The drift lock names
-`colour_key` as the whole of what may appear in such a proposal
-(`MigrationsCoverSchemaTest::RETIRED_UNTIL_DROPPED`), and removing the entry is
-what the 0.5.0 migration does alongside the SQL.
+Collected: `Version20260921000000` drops the column with an `@destructive`
+marker, and the drift lock (`MigrationsCoverSchemaTest`) tolerates nothing.
+An installation that wants what the column held takes
+`pg_dump -t incident_taxonomy_kind` before migrating; rolling the version back
+restores the column empty.
