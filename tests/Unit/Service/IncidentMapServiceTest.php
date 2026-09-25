@@ -17,7 +17,9 @@ use PHPUnit\Framework\TestCase;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Bundle\AtlasBundle\Map\MapBuilder;
 use Uhifadhi\Bundle\AtlasBundle\Model\AtlasMap;
+use Uhifadhi\Bundle\AtlasBundle\Model\Ground;
 use Uhifadhi\Bundle\AtlasBundle\Model\LegendItem;
+use Uhifadhi\Contracts\Atlas\PlatePalette;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Entity\TaxonomyKind;
 use Uhifadhi\Incident\Entity\TaxonomySubcategory;
@@ -69,7 +71,7 @@ final class IncidentMapServiceTest extends TestCase
         $layers = self::compose(self::BOUNDARY)->toArray()['layers'];
 
         self::assertSame(
-            ['incident.zones', 'incident.poaching', 'incident.mortality'],
+            [Ground::ZONES_LAYER_ID, 'incident.poaching', 'incident.mortality'],
             array_column($layers, 'id'),
         );
         self::assertSame(HousePalette::token(1), $layers[1]['swatch']);
@@ -105,9 +107,9 @@ final class IncidentMapServiceTest extends TestCase
     {
         $legend = self::compose(self::BOUNDARY)->legend();
 
-        self::assertSame(['Zones', 'Poaching', 'Mortality'], array_map(static fn (LegendItem $i) => $i->label, $legend));
-        self::assertSame([1, 2, 1], array_map(static fn (LegendItem $i) => $i->count, $legend));
-        self::assertSame(['incident.zones', 'incident.poaching', 'incident.mortality'], array_map(static fn (LegendItem $i) => $i->layerId, $legend));
+        self::assertSame(['Boundary', 'Zones', 'Poaching', 'Mortality'], array_map(static fn (LegendItem $i) => $i->label, $legend));
+        self::assertSame([null, 1, 2, 1], array_map(static fn (LegendItem $i) => $i->count, $legend));
+        self::assertSame([AtlasMap::BOUNDARY_LAYER_ID, Ground::ZONES_LAYER_ID, 'incident.poaching', 'incident.mortality'], array_map(static fn (LegendItem $i) => $i->layerId, $legend));
     }
 
     /** Every category row sits under one heading, so the plate reads as this module's. */
@@ -115,8 +117,32 @@ final class IncidentMapServiceTest extends TestCase
     {
         $legend = self::compose(self::BOUNDARY)->legend();
 
-        self::assertSame(IncidentMapService::GROUP, $legend[1]->group);
         self::assertSame(IncidentMapService::GROUP, $legend[2]->group);
+        self::assertSame(IncidentMapService::GROUP, $legend[3]->group);
+    }
+
+    /**
+     * THE AREA'S GROUND IS THE ATLAS'S: the boundary row then "Zones · N"
+     * under "The area", the zones the first layer, in the atlas's quiet line.
+     * This module names no zone swatch.
+     */
+    public function testThePlateStandsOnTheAreasGround(): void
+    {
+        $map = self::compose(self::BOUNDARY);
+        $legend = $map->legend();
+
+        self::assertSame([Ground::GROUP, Ground::GROUP], [$legend[0]->group, $legend[1]->group]);
+        self::assertSame(['Boundary', 'Zones'], [$legend[0]->label, $legend[1]->label]);
+        self::assertSame(1, $legend[1]->count);
+        self::assertSame(PlatePalette::DIM, $map->toArray()['layers'][0]['swatch']);
+    }
+
+    public function testAnAreaWithNoBoundaryStillStatesItsZonesRow(): void
+    {
+        $legend = self::compose(null)->legend();
+
+        self::assertSame('Zones', $legend[0]->label);
+        self::assertSame(Ground::GROUP, $legend[0]->group);
     }
 
     /**
@@ -127,7 +153,7 @@ final class IncidentMapServiceTest extends TestCase
     {
         $zones = self::compose(self::BOUNDARY)->toArray()['layers'][0];
 
-        self::assertSame('incident.zones', $zones['id']);
+        self::assertSame(Ground::ZONES_LAYER_ID, $zones['id']);
         self::assertSame('line', $zones['shape']);
         self::assertSame(
             [['type' => 'Feature', 'properties' => ['label' => 'The northern block'], 'geometry' => json_decode(self::ZONE, true)]],
@@ -313,19 +339,19 @@ final class IncidentMapServiceTest extends TestCase
 
     /**
      * @param list<array{slug: string, label: string, cat: int}>|null $categories
-     * @param list<array{name: string, geom: string|null}>|null       $zones
+     * @param list<array{name: string|null, geom: string|null}>|null  $zones
      */
     private static function compose(?string $boundary, ?array $categories = null, ?array $zones = null): AtlasMap
     {
         return IncidentMapService::compose(
             new MapBuilder(),
-            $boundary,
+            // The area's answer, as AreaMapPayload::forArea() gives it.
+            ['boundary' => $boundary, 'zones' => $zones ?? [['name' => 'The northern block', 'geom' => self::ZONE]]],
             self::collection(),
             $categories ?? [
                 ['slug' => 'poaching', 'label' => 'Poaching', 'cat' => 1],
                 ['slug' => 'mortality', 'label' => 'Mortality', 'cat' => 4],
             ],
-            $zones ?? [['name' => 'The northern block', 'geom' => self::ZONE]],
         );
     }
 

@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Uhifadhi\Bundle\AreaBundle\Repository\AreaOfInterestRepository;
-use Uhifadhi\Bundle\AreaBundle\Repository\ZoneRepository;
 use Uhifadhi\Bundle\AtlasBundle\Map\MapBuilderInterface;
 use Uhifadhi\Bundle\ShellBundle\Widget\Service\WidgetService;
 use Uhifadhi\Contracts\Shell\ConfigurationSectionsInterface;
@@ -98,9 +97,13 @@ return static function (ContainerConfigurator $container): void {
     $services->set('incident.map', IncidentMapService::class)
         ->args([
             service(MapBuilderInterface::class),
-            // The area's zones are the AREA's, read from the bundle that owns
-            // them rather than copied into this module's schema.
-            service(ZoneRepository::class),
+            // THE AREA'S GROUND — its boundary and zones — as the area answers
+            // it, by that bundle's published service id: "Services should not
+            // use autowiring or autoconfiguration. Instead, all services should
+            // be defined explicitly."
+            // https://symfony.com/doc/current/bundles/best_practices.html ; the
+            // id is defined in vendor/uhifadhi/uhifadhi/src/Uhifadhi/Bundle/AreaBundle/config/services.php
+            service('area.map_payload'),
             // Where a mark leads when it is clicked. The url is generated here
             // and travels as a feature property; the atlas writes the link.
             service('router'),

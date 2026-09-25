@@ -251,9 +251,8 @@ file's **Where** card. All three are the atlas's plate, stated by
 | What is on it | How it is stated |
 |---|---|
 | one layer per category, in the hue its place points at | `GeoJsonLayer`, `shape: LayerShape::Point`, `swatch: HousePalette::token(...)` |
-| the area's zones, quiet, wearing their names | `GeoJsonLayer`, `shape: LayerShape::Line`, a `label` on each feature |
-| the area boundary and its scrim | `Boundary` |
-| the legend, one switching row per layer | the layers' own rows, under one group |
+| the area's ground: the boundary and its scrim, the zones quiet and named under every mark, and the "Boundary" and "Zones · N" rows under "The area" | `$map->ground(Ground::fromGeoJson(...))` over `AreaMapPayload::forArea()` — the atlas's, the same on every module's plate |
+| the legend, one switching row per layer | the ground's two rows, then the categories' own rows under "Incidents" |
 | filled = open · hollow = resolved or closed | `StyleRule::when('open', false)->fillOpacity(0.0)` |
 | a dashed ring at the serious end | `StyleRule::when('severity', ['high', 'critical'])->…->dashArray('3 3')` |
 | what a mark says on hover | the layer's `tooltip: 'summary'`, a property `IncidentMapService::featuresFor()` composes |

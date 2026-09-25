@@ -15,13 +15,12 @@ namespace Uhifadhi\Incident\Service;
 
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
-use Uhifadhi\Bundle\AreaBundle\Entity\Zone;
-use Uhifadhi\Bundle\AreaBundle\Repository\ZoneRepository;
+use Uhifadhi\Bundle\AreaBundle\Service\AreaMapPayload;
 use Uhifadhi\Bundle\AtlasBundle\Map\MapBuilderInterface;
 use Uhifadhi\Bundle\AtlasBundle\Model\AtlasMap;
-use Uhifadhi\Bundle\AtlasBundle\Model\Boundary;
 use Uhifadhi\Bundle\AtlasBundle\Model\FeaturePopup;
 use Uhifadhi\Bundle\AtlasBundle\Model\GeoJsonLayer;
+use Uhifadhi\Bundle\AtlasBundle\Model\Ground;
 use Uhifadhi\Bundle\AtlasBundle\Model\LayerShape;
 use Uhifadhi\Bundle\AtlasBundle\Model\LayerStyle;
 use Uhifadhi\Bundle\AtlasBundle\Model\StyleRule;
@@ -53,29 +52,20 @@ use Uhifadhi\Incident\Model\HousePalette;
  * carries; the atlas writes the markup and escapes the values, so nothing here
  * is ever rendered HTML on somebody's map.
  *
- * The zones under them are the AREA's, not this module's: drawn as quiet
- * outlines wearing their names, so a mark can be read against the ground it
- * sits in.
+ * THE GROUND UNDER THEM IS THE AREA'S, not this module's. The area answers
+ * what its ground is (`AreaMapPayload::forArea()`: the boundary and the zones)
+ * and the atlas draws it as a {@see Ground}: the zones as quiet outlines
+ * wearing their names under every mark, and the legend opening on "The area"
+ * with the boundary row and "Zones · N" — the one shape every module's plate of
+ * the area wears.
  *
- * @see vendor/uhifadhi/uhifadhi/src/Uhifadhi/Bundle/AreaBundle/Service/AreaMap.php
+ * @see vendor/uhifadhi/uhifadhi/src/Uhifadhi/Bundle/AreaBundle/Service/AreaMapPayload.php
  * @see vendor/uhifadhi/uhifadhi/src/Uhifadhi/Bundle/AtlasBundle/docs/components.md
  */
 final readonly class IncidentMapService
 {
     /** The heading every kind's row sits under, so the plate reads as this module's. */
     public const string GROUP = 'Incidents';
-
-    /** The zones layer's id, which is also what its legend row switches. */
-    public const string ZONES_LAYER = 'incident.zones';
-
-    /**
-     * The quiet outline the area's zones are drawn in.
-     *
-     * The atlas takes a swatch as a STRING, so this is the house token for the
-     * muted mark on imagery — named, not valued. A zone is not a category and
-     * takes none of the nine; it is the ground the categories are drawn on.
-     */
-    public const string ZONE_SWATCH = 'var(--plate-dim)';
 
     /**
      * WHAT A MARK MEANS, AND THE LEGEND SAYS EXACTLY THIS.
@@ -106,13 +96,13 @@ final readonly class IncidentMapService
 
     public function __construct(
         private MapBuilderInterface $maps,
-        private ZoneRepository $zones,
+        private AreaMapPayload $ground,
         private UrlGeneratorInterface $urls,
     ) {
     }
 
     /**
-     * The plate an incidents screen renders: the area, its zones, and the
+     * The plate an incidents screen renders: the area's ground, and the
      * incidents handed in, split by kind.
      *
      * The kinds are the CALLER's choice, not the whole vocabulary: a dashboard
@@ -126,19 +116,13 @@ final readonly class IncidentMapService
     {
         return self::compose(
             $this->maps,
-            $area->hasBoundary() ? $area->getGeom() : null,
+            $this->ground->forArea($area),
             self::featuresFor($incidents, $this->caseFiles($area, $incidents)),
             array_map(static fn (TaxonomyKind $kind): array => [
                 'slug' => $kind->getCode(),
                 'label' => $kind->getLabel(),
                 'cat' => $kind->catIndex(),
             ], $kinds),
-            array_map(static fn (Zone $zone): array => [
-                // A zone with no name is drawn without a label rather than left
-                // off the map: the outline is the fact, the name is the caption.
-                'name' => $zone->getName() ?? '',
-                'geom' => $zone->getGeom(),
-            ], $this->zones->zonesFor($area)),
         );
     }
 
@@ -148,45 +132,21 @@ final readonly class IncidentMapService
      * Static and entity-free so the shape of the plate — which layer, which
      * hue, which legend row — is unit-tested without a database behind it.
      *
-     * @param string|null                                        $boundary   the area's geom as GeoJSON text
-     * @param array<string, mixed>                               $collection the FeatureCollection {@see featuresFor()} builds
-     * @param list<array{slug: string, label: string, cat: int}> $kinds
-     * @param list<array{name: string, geom: string|null}>       $zones
+     * @param array{boundary: string|null, zones: list<array{name: string|null, geom: string|null}>} $ground     the area's answer, from `AreaMapPayload::forArea()`
+     * @param array<string, mixed>                                                                   $collection the FeatureCollection {@see featuresFor()} builds
+     * @param list<array{slug: string, label: string, cat: int}>                                     $kinds
      */
     public static function compose(
         MapBuilderInterface $maps,
-        ?string $boundary,
+        array $ground,
         array $collection,
         array $kinds,
-        array $zones,
     ): AtlasMap {
         $map = $maps->createMap();
 
-        $geometry = self::decode($boundary);
-        if (null !== $geometry) {
-            $map->boundary(new Boundary($geometry));
-        }
-
-        $drawnZones = [];
-        foreach ($zones as $zone) {
-            $shape = self::decode($zone['geom']);
-            if (null !== $shape) {
-                $drawnZones[] = self::feature($shape, ['label' => $zone['name']]);
-            }
-        }
-
-        // THE ZONES SIT UNDER THE MARKS, so they are added first: the plate
-        // draws layers in the order they are stated.
-        $map->addLayer(new GeoJsonLayer(
-            id: self::ZONES_LAYER,
-            label: 'Zones',
-            features: self::collection($drawnZones),
-            swatch: self::ZONE_SWATCH,
-            shape: LayerShape::Line,
-            visible: [] !== $drawnZones,
-            count: \count($drawnZones),
-            group: self::GROUP,
-        ));
+        // THE AREA'S GROUND, drawn by the atlas: the boundary with its scrim
+        // and row, the zones under every mark with "Zones · N".
+        $map->ground(Ground::fromGeoJson($ground['boundary'], $ground['zones']));
 
         $features = $collection['features'] ?? [];
         foreach ($kinds as $kind) {
@@ -331,17 +291,6 @@ final readonly class IncidentMapService
     }
 
     /**
-     * @param array<string, mixed> $geometry
-     * @param array<string, mixed> $properties
-     *
-     * @return array<string, mixed>
-     */
-    private static function feature(array $geometry, array $properties): array
-    {
-        return ['type' => 'Feature', 'properties' => $properties, 'geometry' => $geometry];
-    }
-
-    /**
      * @param list<mixed> $features
      *
      * @return array<string, mixed>
@@ -349,34 +298,5 @@ final readonly class IncidentMapService
     private static function collection(array $features): array
     {
         return ['type' => 'FeatureCollection', 'features' => $features];
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private static function decode(?string $geoJson): ?array
-    {
-        if (null === $geoJson || '' === $geoJson) {
-            return null;
-        }
-
-        try {
-            $decoded = json_decode($geoJson, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return null;
-        }
-
-        if (!\is_array($decoded) || !\is_string($decoded['type'] ?? null)) {
-            return null;
-        }
-
-        $geometry = [];
-        foreach ($decoded as $key => $value) {
-            if (\is_string($key)) {
-                $geometry[$key] = $value;
-            }
-        }
-
-        return $geometry;
     }
 }

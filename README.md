@@ -163,9 +163,10 @@ $map->addLayer(new GeoJsonLayer(
 
 One layer per category in the house hue that category's PLACE in the area's
 list points at — this module names no colour, it names a position and the shell
-resolves it — each legend row a switch; the
-area's zones underneath, wearing their names; the boundary in the platform's one
-treatment. The imagery, the control stack, the floating legend and fullscreen are
+resolves it — each legend row a switch — over the area's ground: the boundary and
+the zones as the area answers them (`AreaMapPayload::forArea()`), drawn by the
+atlas as a `Ground`, the zones quiet and named under every mark, the legend
+opening on "The area" with the boundary row and "Zones · N". The imagery, the control stack, the floating legend and fullscreen are
 the atlas's, which is why an incident map, a patrol map and the area map read
 identically. The third argument is this module's filter row, rendered one row
 above the map and inside the plate, so the chips stay a row in fullscreen.
