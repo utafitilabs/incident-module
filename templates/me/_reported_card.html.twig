@@ -1,0 +1,20 @@
+{# INCIDENTS I REPORTED (ME·12, #19) — the person's own reports, newest first:
+   the reference and the area's word for it, when, and where it stands.
+
+   Design: variants-my-dashboard/a.html, card ME·12. The design's index chip
+   is the workspace's reference and does not ship (NoWorkshopLabelsTest).
+
+   EVERY INSTANT CARRIES ITS MACHINE VALUE, so the frame prints it in the
+   reader's own timezone; the text inside is what a page with no script
+   shows. This morning's report says "today" and the clock; anything older
+   says the day.
+
+   → Uhifadhi\Incident\Me\IncidentMyCards #}
+<div class="c" data-me="incidents"><span class="tab">Incidents I reported<span class="src">&middot; {{ reading.monthSubline }}</span></span>
+    {% for incident in reading.latest %}
+        <div class="rln"><span><b>{{ incident.reference }}</b> {{ incident.subcategory.label|lower }}</span><span class="mono d">{% if reading.isToday(incident) %}today <time datetime="{{ incident.reportedAt|date('c') }}" data-localtime-format="clock">{{ incident.reportedAt|date('H:i') }}</time>{% else %}<time datetime="{{ incident.reportedAt|date('c') }}" data-localtime-format="daystamp">{{ incident.reportedAt|date('D j M · H:i')|lower }}</time>{% endif %} &middot; <span class="chip {{ reading.chip(incident) }}">{{ reading.words(incident) }}</span></span></div>
+    {% else %}
+        <div class="rln"><span class="d">No incidents reported yet.</span></div>
+    {% endfor %}
+    {% if reading.reportUrl %}<div class="sxfoot"><span class="sp"></span><a class="tgl" href="{{ reading.reportUrl }}">Report one &rarr;</a></div>{% endif %}
+</div>

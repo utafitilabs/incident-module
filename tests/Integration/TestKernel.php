@@ -52,6 +52,7 @@ use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedFileSources;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedGeoProviders;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedKpiProviders;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedModules;
+use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedMyCardProviders;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedStationFigureProviders;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedTopicProviders;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedZoneFigureProviders;
@@ -291,6 +292,10 @@ final class TestKernel extends Kernel
         // repository where the fix belongs is the thing that says so.
         $services->set(CollectedFileSources::class)
             ->args([tagged_iterator('uhifadhi.file_source')])->public();
+        // A PERSON'S OWN DASHBOARD collects its cards on this tag — spelt out
+        // for the reason the file-source one above is.
+        $services->set(CollectedMyCardProviders::class)
+            ->args([tagged_iterator('uhifadhi.me.cards')])->public();
         $services->set(CollectedStationFigureProviders::class)
             ->args([tagged_iterator(StationFigureProviderInterface::TAG)])->public();
         $services->set(CollectedTopicProviders::class)
@@ -342,6 +347,8 @@ final class TestKernel extends Kernel
             // test has to be able to ask the contributor what it puts on `/`.
             'incident.org.widgets',
             'incident.org.figures',
+            // The card this module puts on a person's own dashboard.
+            'incident.my_cards',
             'incident.transitions',
             // What step 2's blocks asked, read and gated — the same object the
             // report endpoint asks, so a test cannot gate by a rule of its own.

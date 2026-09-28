@@ -617,6 +617,61 @@ final class IncidentRepository extends ServiceEntityRepository
     }
 
     /**
+     * WHAT ONE PERSON REPORTED, newest first — the rows of the "Incidents I
+     * reported" card on their own dashboard.
+     *
+     * "Reported" is {@see Incident::$reportedBy}: the account the report was
+     * filed under. The person is named by uuid, as every contract in the
+     * platform names one, and a uuid that is not one names nobody.
+     *
+     * Every area, deliberately: these are the person's own records, shown
+     * because they are theirs.
+     *
+     * @return list<Incident>
+     */
+    public function findReportedByPerson(string $personUuid, int $limit): array
+    {
+        if (!Uuid::isValid($personUuid)) {
+            return [];
+        }
+
+        /** @var list<Incident> $incidents */
+        $incidents = $this->reportedByPerson($personUuid)
+            ->join('i.subcategory', 's')->addSelect('s')
+            ->join('i.area', 'ra')->addSelect('ra')
+            ->orderBy('i.reportedAt', 'DESC')
+            ->addOrderBy('i.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        return $incidents;
+    }
+
+    /** How many incidents one person reported in `[from, until)` — the card's "N this month". */
+    public function countReportedByPersonBetween(string $personUuid, \DateTimeImmutable $from, \DateTimeImmutable $until): int
+    {
+        if (!Uuid::isValid($personUuid)) {
+            return 0;
+        }
+
+        return (int) $this->reportedByPerson($personUuid)
+            ->select('COUNT(i.id)')
+            ->andWhere('i.reportedAt >= :from')->setParameter('from', $from)
+            ->andWhere('i.reportedAt < :until')->setParameter('until', $until)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function reportedByPerson(string $personUuid): QueryBuilder
+    {
+        return $this->createQueryBuilder('i')
+            ->join('i.reportedBy', 'rb')
+            ->andWhere('rb.uuid = :reporter')
+            ->setParameter('reporter', Uuid::fromString($personUuid), 'uuid');
+    }
+
+    /**
      * EVERY INCIDENT RECORDED IN A SCOPE in a window, with the taxonomy and the
      * money already loaded — the rows behind every department KPI plate.
      *

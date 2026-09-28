@@ -16,11 +16,13 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 use Uhifadhi\Bundle\AreaBundle\Repository\AreaOfInterestRepository;
 use Uhifadhi\Bundle\AtlasBundle\Map\MapBuilderInterface;
 use Uhifadhi\Bundle\ShellBundle\Widget\Service\WidgetService;
+use Uhifadhi\Contracts\Me\MyCardProviderInterface;
 use Uhifadhi\Contracts\Shell\ConfigurationSectionsInterface;
 use Uhifadhi\Contracts\Shell\ModuleTabsInterface;
 use Uhifadhi\Incident\Controller\IncidentController;
 use Uhifadhi\Incident\Controller\IncidentKindsOverviewController;
 use Uhifadhi\Incident\Controller\IncidentListController;
+use Uhifadhi\Incident\Me\IncidentMyCards;
 use Uhifadhi\Incident\Repository\AreaListEntryRepository;
 use Uhifadhi\Incident\Repository\IncidentEventRepository;
 use Uhifadhi\Incident\Repository\IncidentEvidenceRepository;
@@ -159,6 +161,23 @@ return static function (ContainerConfigurator $container): void {
             service(IncidentRepository::class),
             service('router'),
         ]);
+
+    /*
+     * THE CARD ON A PERSON'S OWN DASHBOARD (#19): "Incidents I reported".
+     * Tagged by hand with the contract's own constant — a reusable bundle is
+     * not autoconfigured, and an untagged provider is a card that silently
+     * never appears. Its door asks `incident.access.doors`, defined beside
+     * the concerns in UhifadhiIncidentBundle::loadExtension().
+     */
+    $services->set('incident.my_cards', IncidentMyCards::class)
+        ->args([
+            service('twig'),
+            service(IncidentRepository::class),
+            service(AreaOfInterestRepository::class),
+            service('incident.access.doors'),
+            service('router'),
+        ])
+        ->tag(MyCardProviderInterface::TAG);
 
     /*
      * THE CASE FILE'S WRITE SURFACE — what happens to an incident after it is
