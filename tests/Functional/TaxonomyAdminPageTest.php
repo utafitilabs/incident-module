@@ -15,7 +15,7 @@ namespace Uhifadhi\Incident\Tests\Functional;
 
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Contracts\Devkit\ContentProviderInterface;
-use Uhifadhi\Incident\Devkit\DemoMonth;
+use Uhifadhi\Incident\Devkit\SeedMonth;
 use Uhifadhi\Incident\Entity\TaxonomyKind;
 use Uhifadhi\Incident\Entity\TaxonomySubcategory;
 use Uhifadhi\Incident\Enum\BehaviorBlockEnum;
@@ -48,21 +48,21 @@ final class TaxonomyAdminPageTest extends FunctionalTestCase
         return \count($this->em->getRepository(TaxonomyKind::class)->findBy(['area' => $area]));
     }
 
-    // ── what the demo seeds is what the editor shows ─────────────────────────
+    // ── what the seeds is what the editor shows ─────────────────────────
 
     /**
-     * THE LOOP THE RULING CLOSES. Whatever `fixtures:demo` seeds must appear in
-     * this editor — a demo that filed incidents against words an administrator
+     * THE LOOP THE RULING CLOSES. Whatever `fixtures:seed` seeds must appear in
+     * this editor — a seed that filed incidents against words an administrator
      * could not see, rename or retire would be demonstrating a product that does
      * not exist.
      *
      * So this runs the declaration devkit collects, against an area with nothing
      * in it, and then loads the page a person loads.
      */
-    public function testTheKindsTheDemoSeedsAreTheKindsTheEditorShows(): void
+    public function testTheKindsTheSeedSeedsAreTheKindsTheEditorShows(): void
     {
         $area = $this->anArea('Southern Reserve');
-        $this->demoContent()->load();
+        $this->seedContent()->load();
         $this->em->clear();
 
         $this->client->loginUser($this->aManager());
@@ -73,15 +73,15 @@ final class TaxonomyAdminPageTest extends FunctionalTestCase
         self::assertCount(1, $crawler->filter('.tx-mgr'));
 
         $labels = $crawler->filter('.tx-kind .nm')->each(static fn ($node): string => trim($node->text()));
-        foreach (DemoMonth::kinds() as $code => $definition) {
+        foreach (SeedMonth::kinds() as $code => $definition) {
             self::assertContains(
                 $definition['label'].$code,
                 $labels,
-                \sprintf('The demo seeded "%s" and the editor has to show it, under its own wire-code.', $definition['label']),
+                \sprintf('The seeded "%s" and the editor has to show it, under its own wire-code.', $definition['label']),
             );
         }
 
-        // And the words under the selected kind carry what the demo gave them —
+        // And the words under the selected kind carry what the seed gave them —
         // the term and the fields, not only the name.
         $subs = $crawler->filter('.tx-sub')->count();
         self::assertGreaterThan(0, $subs);
@@ -89,7 +89,7 @@ final class TaxonomyAdminPageTest extends FunctionalTestCase
     }
 
     /** Devkit's inert declaration, played by the suite the way devkit plays it. */
-    private function demoContent(): ContentProviderInterface
+    private function seedContent(): ContentProviderInterface
     {
         /** @var ContentProviderInterface $provider */
         $provider = static::getContainer()->get('test_public.incident.devkit.content');

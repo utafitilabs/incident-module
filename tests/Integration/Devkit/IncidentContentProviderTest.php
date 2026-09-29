@@ -15,8 +15,8 @@ namespace Uhifadhi\Incident\Tests\Integration\Devkit;
 
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Contracts\Devkit\ContentProviderInterface;
-use Uhifadhi\Incident\Devkit\DemoMonth;
 use Uhifadhi\Incident\Devkit\IncidentContentProvider;
+use Uhifadhi\Incident\Devkit\SeedMonth;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Entity\IncidentEvidence;
 use Uhifadhi\Incident\Entity\IncidentParty;
@@ -35,7 +35,7 @@ use Uhifadhi\Storage\Registry\FileRegistry;
  * THE DESIGN'S SAMPLE MONTH, SEEDED THROUGH THE MODULE'S OWN SERVICES — and then
  * read back through the DASHBOARD.
  *
- * {@see \Uhifadhi\Incident\Tests\Unit\Devkit\DemoMonthTest} adds the table up;
+ * {@see \Uhifadhi\Incident\Tests\Unit\Devkit\SeedMonthTest} adds the table up;
  * this proves the table survives being written to a real database through the
  * doors a person uses, and that the widgets then print the numbers the preset
  * gallery states.
@@ -80,7 +80,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
 
     /**
      * IT WRITES THE AREA'S OWN WORDS FIRST. Nothing is seeded on install, so a
-     * demo that filed before writing them would fail for a reason that looks like
+     * seed that filed before writing them would fail for a reason that looks like
      * a bug and is really an empty vocabulary — and the words it writes are the
      * ones the kinds editor shows, because it writes them through that editor's
      * own service.
@@ -104,7 +104,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
         $this->anArea('Sample Area');
         $this->provider()->load();
 
-        self::assertSame(DemoMonth::partyCount(), $this->em->getRepository(IncidentParty::class)->count([]));
+        self::assertSame(SeedMonth::partyCount(), $this->em->getRepository(IncidentParty::class)->count([]));
     }
 
     /** An animal is a party too, and the design's worked example is where it appears. */
@@ -124,7 +124,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
     /**
      * EVERY SEEDED RECORD ANSWERS THE BLOCKS ITS WORD SWITCHED ON — every one of
      * their DEFINING questions, because a seeded record the report form would have
-     * refused is a demo that teaches the wrong rule.
+     * refused is a seed that teaches the wrong rule.
      */
     public function testEverySeededIncidentAnsweredTheBlocksItsWordAsks(): void
     {
@@ -179,7 +179,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
         $this->provider()->load();
 
         $evidence = $this->em->getRepository(IncidentEvidence::class)->findAll();
-        self::assertSame(DemoMonth::evidenceCount(), \count($evidence));
+        self::assertSame(SeedMonth::evidenceCount(), \count($evidence));
 
         foreach ($evidence as $item) {
             self::assertNotNull($item->getPath(), 'Seeded evidence must be keyed, not merely recorded.');
@@ -208,7 +208,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
         /** @var FileRegistry $registry */
         $registry = $this->service('storage.file_registry');
 
-        self::assertCount(DemoMonth::evidenceCount(), $registry->all());
+        self::assertCount(SeedMonth::evidenceCount(), $registry->all());
     }
 
     /**
@@ -234,7 +234,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
     }
 
     /**
-     * THE DEMO OPENS ON A POPULATED DASHBOARD, which is the only reason to seed
+     * THE SEED OPENS ON A POPULATED DASHBOARD, which is the only reason to seed
      * one. The dashboard's default window is the CURRENT month; a sample month
      * pinned to a date in the past put all forty-seven incidents just out of view
      * and a freshly seeded installation opened on "0 filed" and an empty register.
@@ -255,7 +255,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
         // At LEAST the recent rows: when the month is older than three weeks the
         // recent window starts three weeks back and the older rows that fill the
         // days before it still fall inside this month.
-        self::assertGreaterThanOrEqual(DemoMonth::RECENT_COUNT, $inThisMonth);
+        self::assertGreaterThanOrEqual(SeedMonth::RECENT_COUNT, $inThisMonth);
     }
 
     /** And nothing is filed in the future, whatever day of the month it is run on. */
@@ -271,7 +271,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
     }
 
     /**
-     * DEMO CONTENT IS PLACED IN THE INSTALLATION'S AREA, whatever area that is.
+     * SEED CONTENT IS PLACED IN THE INSTALLATION'S AREA, whatever area that is.
      *
      * The provider used to carry fixed fixture coordinates, and those coordinates
      * had been shifted sixty-five degrees west when the client names were purged.
@@ -280,7 +280,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
      * forty-seven landed in the open Atlantic, the dashboard map fitted itself to
      * a blob a continent away from the area, and `st_within` answered 0 of 47.
      *
-     * So the boundary is now the only thing that decides where a demo incident
+     * So the boundary is now the only thing that decides where a seed incident
      * is, and this asks PostGIS the question directly rather than comparing
      * numbers in PHP.
      */
@@ -437,7 +437,7 @@ final class IncidentContentProviderTest extends IntegrationTestCase
      * MONEY IS THE ONE FIGURE THAT DIFFERS FROM THE DESIGN, and deliberately: the
      * product records money once response has started, and sixteen rows of the
      * sample month carry money at `reported` or `verified`. Those figures are not
-     * written, because writing them would mean seeding a state no screen can
+     * written, because writing them would mea seeding a state no screen can
      * produce. What is asserted here is therefore the money the PRODUCT can hold.
      */
     public function testTheDashboardPrintsTheGallerysOwnNumbers(): void
@@ -452,10 +452,10 @@ final class IncidentContentProviderTest extends IntegrationTestCase
         self::assertNotNull($area);
 
         // THE WHOLE SPAN, because the sample month is now measured back from
-        // today rather than pinned to a date — see DemoMonth::reportedAt().
+        // today rather than pinned to a date — see SeedMonth::reportedAt().
         $today = new \DateTimeImmutable()->setTime(23, 59, 59);
         $dashboard = $service->build(
-            new IncidentFilter($area, $today->modify(\sprintf('-%d days', DemoMonth::SPAN_DAYS + 1)), $today),
+            new IncidentFilter($area, $today->modify(\sprintf('-%d days', SeedMonth::SPAN_DAYS + 1)), $today),
             $today,
         );
 

@@ -37,7 +37,7 @@ use Uhifadhi\Incident\Service\IncidentReportService;
 use Uhifadhi\Incident\Service\TaxonomyAdminService;
 
 /**
- * A MONTH OF INCIDENTS TO LOOK AT — the sample month {@see DemoMonth} describes,
+ * A MONTH OF INCIDENTS TO LOOK AT — the sample month {@see SeedMonth} describes,
  * filed into the area the installation already has, so a developer's first
  * dashboard is a populated one.
  *
@@ -46,12 +46,12 @@ use Uhifadhi\Incident\Service\TaxonomyAdminService;
  * every state reached one legal transition at a time through
  * {@see IncidentCaseService}, every money figure recorded by
  * {@see IncidentMoneyService}, every party, assignment and photograph written
- * through the doors a person uses. Demo content written straight to the tables is
- * demo content that can be shaped in ways the product cannot produce, and every
+ * through the doors a person uses. Seed content written straight to the tables is
+ * seed content that can be shaped in ways the product cannot produce, and every
  * such row is a bug report about a screen that is working correctly.
  *
  * THE SAMPLE MONTH ENDS TODAY. It is a shape, not a date — see
- * {@see DemoMonth::reportedAt()} for why a fixed month seeded a dashboard that
+ * {@see SeedMonth::reportedAt()} for why a fixed month seeded a dashboard that
  * opened on nothing.
  *
  * AND IT IS PLACED WHERE THE INSTALLATION IS. The sample month says WHAT
@@ -96,7 +96,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
     private const float INTERIOR_MARGIN = 0.05;
 
     /**
-     * THE INTERIOR THE DEMO IS ALLOWED TO USE: the area's boundary eroded by
+     * THE INTERIOR THE SEED IS ALLOWED TO USE: the area's boundary eroded by
      * {@see INTERIOR_MARGIN} of its narrow side, so a seeded incident is not
      * sitting on the line where it is impossible to tell which side of the
      * boundary it is on. An area too narrow to erode keeps its own outline.
@@ -125,7 +125,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
      * measures it and makes a preview, which is the whole point of seeding
      * through the storage path rather than writing keys.
      *
-     * Deliberately not a picture of anything. Demo evidence stands for the SHAPE
+     * Deliberately not a picture of anything. Seed evidence stands for the SHAPE
      * of a record; a stock photograph of a snare or a carcass would be a claim
      * about a place, and this seeder files into whatever area an installation has.
      */
@@ -164,7 +164,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
      * The people. Incidents are recorded BY somebody, and a register whose every
      * row was recorded by nobody says nothing about who is doing the work.
      *
-     * Areas are not named here, deliberately: nothing installed ships area demo
+     * Areas are not named here, deliberately: nothing installed ships area seed
      * content yet, and devkit refuses an edge to a key no provider declares. The
      * area is taken from whatever the installation has.
      *
@@ -197,7 +197,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
             return;
         }
 
-        $rows = DemoMonth::incidents();
+        $rows = SeedMonth::incidents();
         $positions = $this->samplePositions($area, \count($rows));
         if ([] === $positions) {
             // An area that is gazetted and named but whose boundary has not been
@@ -215,7 +215,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
                 continue;
             }
 
-            $reportedAt = DemoMonth::reportedAt($index, $today);
+            $reportedAt = SeedMonth::reportedAt($index, $today);
             $recorder = [] === $recorders ? null : $recorders[$index % \count($recorders)];
 
             $incident = $this->reports->file(
@@ -229,7 +229,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
                 occurredAt: $reportedAt->modify('-2 hours'),
                 narrative: $row['narrative'],
                 reportedBy: $recorder,
-                blockAnswers: DemoMonth::blockAnswersFor($subcategory, $index),
+                blockAnswers: SeedMonth::blockAnswersFor($subcategory, $index),
             );
 
             $this->addParties($incident, $row['parties'], $reportedAt, $recorder);
@@ -256,7 +256,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
      * and retire.
      *
      * SEEDED ONCE. An area that already has a kind is left exactly as it is: its
-     * words are its own, and a demo seeder is not entitled to add to them.
+     * words are its own, and a seeder is not entitled to add to them.
      */
     private function seedTheVocabulary(AreaOfInterest $area): void
     {
@@ -264,7 +264,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
             return;
         }
 
-        foreach (DemoMonth::kinds() as $code => $definition) {
+        foreach (SeedMonth::kinds() as $code => $definition) {
             $kind = $this->taxonomy->createKind($area, $definition['label'], $code);
             $this->taxonomy->setKindLeads($kind, $definition['leads']);
 
@@ -285,7 +285,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
 
     /**
      * The blocks the table names, as the enum — a value the enum does not know is
-     * dropped rather than seeded, because a demo may not teach a block that does
+     * dropped rather tha seeded, because a seed may not teach a block that does
      * not exist.
      *
      * @param list<string> $blocks
@@ -430,7 +430,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
      *
      * ST_GeneratePoints in its three-argument form takes a SEED, so this is
      * deterministic: the same area seeded twice puts the same incident in the
-     * same place, and a screenshot of the demo keeps meaning something. Ordered
+     * same place, and a screenshot of the seed keeps meaning something. Ordered
      * by latitude then longitude for the same reason — the mapping from row to
      * place must not depend on what order the database felt like returning.
      *
@@ -448,7 +448,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
             ' SELECT ST_X(p) AS lon, ST_Y(p) AS lat
               FROM (SELECT (ST_Dump(ST_GeneratePoints(interior.geom, :count, :seed))).geom AS p FROM interior) d
               ORDER BY ST_Y(p), ST_X(p)',
-            ['id' => $area->getId(), 'count' => $count, 'seed' => DemoMonth::RANDOM_SEED],
+            ['id' => $area->getId(), 'count' => $count, 'seed' => SeedMonth::RANDOM_SEED],
         );
 
         $positions = [];
@@ -459,7 +459,7 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
         }
 
         // Fewer points than rows is a shape ST_GeneratePoints could not fill —
-        // seeding a partial month would be a demo that silently disagrees with
+        // seeding a partial month would be a seed that silently disagrees with
         // every total the gallery states, so it seeds none.
         return \count($positions) >= $count ? \array_slice($positions, 0, $count) : [];
     }
@@ -467,9 +467,9 @@ final readonly class IncidentContentProvider implements ContentProviderInterface
     /** The seeded photograph, on disk where the platform's storage can read it. */
     private function aPhotograph(): File
     {
-        $path = tempnam(sys_get_temp_dir(), 'incident-demo-evidence');
+        $path = tempnam(sys_get_temp_dir(), 'incident-seed-evidence');
         if (false === $path) {
-            throw new \RuntimeException('The demo photograph could not be written to a temporary file.');
+            throw new \RuntimeException('The seed photograph could not be written to a temporary file.');
         }
 
         file_put_contents($path, base64_decode(self::PHOTOGRAPH, true) ?: '');

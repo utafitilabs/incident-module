@@ -30,9 +30,9 @@ use Uhifadhi\Incident\Model\BlockAnswers;
  *   TZS 12,400,000 claimed in compensation, 9,200,000 approved, 4,700,000 paid
  *   seven zones
  *
- * {@see \Uhifadhi\Incident\Tests\Unit\Devkit\DemoMonthTest} adds those columns
- * up and fails if a row ever drifts, because a demo that quietly stopped matching
- * the spec is worse than no demo: every screenshot in the gallery would be a
+ * {@see \Uhifadhi\Incident\Tests\Unit\Devkit\SeedMonthTest} adds those columns
+ * up and fails if a row ever drifts, because a seed that quietly stopped matching
+ * the spec is worse than no seed: every screenshot in the gallery would be a
  * claim the product no longer supports.
  *
  * THIRTEEN OF THE ROWS ARE THE DESIGN'S OWN, by reference and to the word —
@@ -47,7 +47,7 @@ use Uhifadhi\Incident\Model\BlockAnswers;
  * row is filed under `livestock-depredation` here. Whether "predator presence"
  * becomes a seventeenth sub-category is a ruling nobody has made.
  */
-final class DemoMonth
+final class SeedMonth
 {
     /** The department names the sample month's kinds lead with, in the design's own words. */
     public const string PROTECTION = 'Protection Service';
@@ -65,13 +65,13 @@ final class DemoMonth
      * questions the report page counts; livestock depredation carries Species,
      * Counts, Parties and Money · compensation; crop raiding carries the money
      * block alone, which is the smallest step 2 a word can produce. The other
-     * thirteen are configured the way this demo's words were already being asked
+     * thirteen are configured the way this seed's words were already being asked
      * about, so every one of the twelve blocks appears somewhere a developer can
      * see it.
      *
-     * IT IS DEMO CONTENT, NOT A DEFAULT. The module ships no taxonomy and seeds
+     * IT IS SEED CONTENT, NOT A DEFAULT. The module ships no taxonomy and seeds
      * none: a new area starts empty and writes its own words in the kinds editor.
-     * This table exists so that `fixtures:demo` produces an area whose editor,
+     * This table exists so that `fixtures:seed` produces an area whose editor,
      * register and dashboard all agree, and it reaches a database only through
      * devkit — which installs via `require-dev`.
      *
@@ -237,15 +237,15 @@ final class DemoMonth
      * The month is a SHAPE, not a date. Seeded at a fixed 2026-08 it landed
      * entirely outside the dashboard's default window — the current month — so a
      * freshly seeded installation opened on "0 filed" and an empty register, with
-     * forty-seven incidents sitting just out of view. A demo whose first screen is
-     * empty is worse than no demo.
+     * forty-seven incidents sitting just out of view. A seed whose first screen is
+     * empty is worse than no seed.
      */
     public const int SPAN_DAYS = 42;
 
     /**
      * How many of the forty-seven land inside the CURRENT calendar month.
      *
-     * Most of them, deliberately: the dashboard opens on this month, and a demo
+     * Most of them, deliberately: the dashboard opens on this month, and a seed
      * that put its weight in the weeks before it would be showing the product
      * looking quiet. The rest fill the run-up so the trend charts have a slope to
      * draw and the ageing widget has something old in it.
@@ -1270,7 +1270,7 @@ final class DemoMonth
 
     /**
      * A point inside the sample area, deterministic per row so two runs of the
-     * seeder put the same incident in the same place — a demo whose map moved
+     * seeder put the same incident in the same place — a seed whose map moved
      * between runs would be read as data changing.
      *
      * The spread is a coarse lattice over the one area bowl and its
@@ -1345,7 +1345,7 @@ final class DemoMonth
      *
      * Only the blocks the sub-category actually switched on are answered, and every
      * DEFINING answer is given: a seeded record that the report form would have
-     * refused is a demo that teaches the wrong rule. A "%d" is replaced by a small
+     * refused is a seed that teaches the wrong rule. A "%d" is replaced by a small
      * number that varies per row, so forty-seven records do not read as one record
      * copied forty-seven times.
      */

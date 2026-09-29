@@ -299,7 +299,7 @@ final class TestKernel extends Kernel
             ->args([tagged_iterator(PerformanceGeoProviderInterface::TAG)])->public();
 
         // And for DEVKIT's content collector, which the migrations upgrade lock
-        // seeds through: this module's demo month depends on team's people, and
+        // seeds through: this module's seed month depends on team's people, and
         // the tag is where that dependency is actually satisfied.
         $services->set(CollectedContentProviders::class)
             ->args([tagged_iterator('uhifadhi.devkit.content_provider')])->public();
@@ -348,7 +348,7 @@ final class TestKernel extends Kernel
             'incident.block_answers',
             // The case file's write surface — the durable half of a move.
             'incident.case',
-            // The inert demo-content declaration devkit collects in a dev
+            // The inert seed-content declaration devkit collects in a dev
             // install. Nothing in this suite is devkit, so the provider is
             // reached directly and asked to do the one thing it does.
             'incident.devkit.content',
@@ -397,7 +397,7 @@ final class TestKernel extends Kernel
             $services->alias('test_public.'.$alias, $id)->public();
         }
 
-        // A throwaway evidence store, under the system temp dir. The demo seeder
+        // A throwaway evidence store, under the system temp dir. The seeder
         // writes real bytes through it — photographs through EvidenceStorage and
         // signed documents straight to the storage — so the Files-hub assertions
         // read a genuine size and preview back. It also lets the bundle boot as it

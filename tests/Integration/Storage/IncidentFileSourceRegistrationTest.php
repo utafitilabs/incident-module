@@ -87,7 +87,7 @@ final class IncidentFileSourceRegistrationTest extends IntegrationTestCase
     }
 
     /**
-     * THE ROWS THE DEMO SEEDER WRITES HAVE NO BYTES. They are records of
+     * THE ROWS THE SEED SEEDER WRITES HAVE NO BYTES. They are records of
      * photographs, not photographs: no path, and therefore no key. The hub is
      * told about none of them, because a tile for a key that names nothing would
      * link at a 404 — the module is simply listed as holding nothing.

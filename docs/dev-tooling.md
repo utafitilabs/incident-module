@@ -2,11 +2,11 @@
 
 ## Contents
 
-- [The demo month is a declaration, not a command](#the-demo-month-is-a-declaration-not-a-command)
+- [The seed month is a declaration, not a command](#the-seed-month-is-a-declaration-not-a-command)
 - [What the declaration cannot write yet](#what-the-declaration-cannot-write-yet)
 - [The two commands that stay, and why](#the-two-commands-that-stay-and-why)
 
-## The demo month is a declaration, not a command
+## The seed month is a declaration, not a command
 
 This module ships no seeding command. It ships an inert declaration —
 `src/Devkit/IncidentContentProvider.php`, tagged `uhifadhi.devkit.content_provider`
@@ -14,7 +14,7 @@ This module ships no seeding command. It ships an inert declaration —
 person can run:
 
 ```bash
-bin/console fixtures:demo
+bin/console fixtures:seed
 ```
 
 devkit installs through `require-dev`, so it is absent from a production build.
@@ -22,11 +22,11 @@ That dependency graph is the firewall: nothing collects the declaration there an
 it is an ordinary service nobody ever asks anything of. There is no environment
 check and no config flag, because there is nothing left for one to gate.
 
-The month it seeds is a table of its own: `src/Devkit/DemoMonth.php`. A demo data
+The month it seeds is a table of its own: `src/Devkit/SeedMonth.php`. A seed data
 table is devkit's kind of class, not a model — nothing in the product reads it and
 no screen renders it — so it sits beside the declaration that consumes it, under
-`Devkit/`, and the class-category table files it as **Demo data table ·
-`XxxDemoMonth`/`DemoMonth` · `Devkit/`**.
+`Devkit/`, and the class-category table files it as **Seed data table ·
+`XxxSeedMonth`/`SeedMonth` · `Devkit/`**.
 
 The declaration seeds the design's sample month — 47 incidents across four
 categories, walked to the states the register shows, with their parties, their
@@ -38,14 +38,14 @@ must not stop the others.
 
 Everything it writes goes through the doors a person uses — the filing service,
 the case service, the money service and the evidence service, one legal move at a
-time. Demo content written straight to the tables is demo content that can be
+time. Seed content written straight to the tables is seed content that can be
 shaped in ways the product cannot produce, and every such row is a bug report
 about a screen that is working correctly.
 
 **The sample month ends today.** It is a shape, not a date: pinned to a fixed
 month it landed entirely outside the dashboard's default window — the current
 month — so a freshly seeded installation opened on "0 filed" and an empty
-register with forty-seven incidents just out of view. `DemoMonth::reportedAt()`
+register with forty-seven incidents just out of view. `SeedMonth::reportedAt()`
 spreads the rows back over six weeks ending today, with 28 of the 47 inside the
 current calendar month, keeping the order, the funnel, the states and the money
 distribution the table declares.
@@ -68,7 +68,7 @@ Two things are still not written, and both are findings rather than omissions:
 | The signed document a money case carries | The platform's default accepted types are images, so a PDF is refused before a key is built. Photographs are seeded with real bytes; the signed form waits on a deployment that accepts one. |
 
 The retired command wrote all of it straight to the entity manager, which kept
-the demo looking complete and kept those facts invisible for as long as it kept
+the seed looking complete and kept those facts invisible for as long as it kept
 working.
 
 The reference is likewise the register's rather than the month's: filing mints
@@ -94,5 +94,5 @@ not.
 There is no taxonomy command. Kinds of incident are
 [each area's own](the-model.md#one-taxonomy-and-it-is-the-areas), written in the
 Incident kinds editor; the module ships none and seeds none, so there is nothing
-for an install step to install. Demo kinds arrive with the rest of the demo
-content, through devkit's `fixtures:demo`.
+for an install step to install. Seed kinds arrive with the rest of the seed
+content, through devkit's `fixtures:seed`.
