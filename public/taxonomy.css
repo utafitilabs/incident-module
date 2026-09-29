@@ -172,8 +172,11 @@
   line-height:1.5;margin-top:4px}
 /* the checkbox itself is the control; it drives .tx-tog appearance and is not
    drawn as a native box on top of the styled one */
-.tx-tog input{position:absolute;opacity:0;width:0;height:0}
-.tx-tog:has(input:focus-visible){outline:2px solid var(--acc);outline-offset:2px}
+.tx-tog input[type="checkbox"]{position:absolute;opacity:0;width:0;height:0}
+.tx-tog:has(input[type="checkbox"]:focus-visible){outline:2px solid var(--acc);outline-offset:2px}
+/* A FIELD IN A TOGGLE ROW (the sub-category's term) is drawn as a field: only
+   the checkbox is hidden, because only the checkbox has a box standing in for it. */
+.tx-tog .tx-input{margin-left:auto;flex:none}
 
 /* ── the deactivation footprint note ────────────────────────────────────
    INFORMATIVE, NOT A GUARD.                                                    */
@@ -328,10 +331,10 @@
    sizes it to the height its text fields keep — decoration over the shell's box,
    never a second box. `width:auto` is the load-bearing half: `.fld` is full-width
    by default, which in a flex row is the whole row. */
-.tx-form .tx-input,.tx-form .fld{border:1px solid var(--ln2);border-radius:8px;padding:7px 11px;
+.tx-form .tx-input,.tx-form .fld,.tx-tog .tx-input{border:1px solid var(--ln2);border-radius:8px;padding:7px 11px;
   background:color-mix(in srgb,var(--fog) 6%,transparent);color:var(--tx);
   font:inherit;font-size:13px;min-width:0;width:auto}
-.tx-form .tx-input:focus,.tx-form .fld:focus{border-color:var(--acc);outline:none;
+.tx-form .tx-input:focus,.tx-form .fld:focus,.tx-tog .tx-input:focus{border-color:var(--acc);outline:none;
   box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
 .tx-form select.fld{cursor:pointer}
 .tx-cta{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--acc);
