@@ -65,8 +65,10 @@ final class FixedGrantVoter extends Voter
     private static function everything(): array
     {
         return [
-            // The ground, as ITS owner declares it.
+            // The ground, as ITS owner declares it — the organization's
+            // dashboard included, since this module contributes to it.
             (string) Grant::of(AreaConcerns::AREAS, Verb::Read),
+            (string) Grant::of(AreaConcerns::DASHBOARD, Verb::Read),
             // This module's own, as this module declares them.
             (string) Grant::of(IncidentConcerns::INCIDENTS, Verb::Read),
             (string) Grant::of(IncidentConcerns::INCIDENTS, Verb::Record),
@@ -135,6 +137,7 @@ final class FixedGrantVoter extends Voter
     {
         return [
             (string) Grant::of(AreaConcerns::AREAS, Verb::Read),
+            (string) Grant::of(AreaConcerns::DASHBOARD, Verb::Read),
             (string) Grant::of(IncidentConcerns::INCIDENTS, Verb::Read),
             (string) Grant::of(IncidentConcerns::INCIDENTS, Verb::Export),
             (string) Grant::of(IncidentConcerns::CASE_FILES, Verb::Read),
