@@ -38,6 +38,8 @@ through that same editor's service.
 
 ## Installation
 
+Commands run through the Symfony CLI — `symfony console …` — which hands the project the addresses of the services the skeleton's `compose.yaml` starts. Served some other way, run `php bin/console …` with those addresses written into `.env.local`.
+
 ```bash
 composer require uhifadhi/incident-module
 ```
@@ -47,10 +49,10 @@ This module requires the core (`uhifadhi/uhifadhi`) and the evidence store (`uhi
 Then the installation's four commands, the same four after every change to it:
 
 ```console
-php bin/console cache:clear --no-warmup
-php bin/console doctrine:migrations:migrate
-php bin/console registry:sync
-php bin/console cache:warmup
+symfony console cache:clear --no-warmup
+symfony console doctrine:migrations:migrate
+symfony console registry:sync
+symfony console cache:warmup
 ```
 
 This module ships the migrations for the tables it owns and registers their path itself, so `migrate` runs them and an installation writes no version for them; `registry:sync` then enters the module in the catalogue and gives every area its row, and prints what it added, kept and retired; `doctrine:migrations:diff` stays reserved for the installation's own entities and must report no changes after this. In development AssetMapper serves the module's stylesheets and scripts from source; the production image compiles them.
@@ -92,7 +94,7 @@ Then, in the host:
 2. **Migrate.**
 
    ```bash
-   bin/console doctrine:migrations:migrate
+   symfony console doctrine:migrations:migrate
    ```
 
    That is the whole step. This module ships the statements that create its
@@ -107,7 +109,7 @@ Then, in the host:
    seeded, so this is the step between installing the module and filing the first
    incident; a bundle that wrote somebody's classification scheme into their
    database on boot would be making that decision for them. In a development
-   installation, `bin/console fixtures:seed` writes a month of sample incidents
+   installation, `symfony console fixtures:seed` writes a month of sample incidents
    and the kinds they are filed under.
 The Stimulus controllers — `incident-board`, `incident-report` and the rest;
 `incident-filters` is deprecated, inert and off by default, and goes in 0.4.0
@@ -177,7 +179,7 @@ The full API is [the atlas components](https://github.com/utafitilabs/uhifadhi/b
 
 ```bash
 composer update uhifadhi/incident-module
-bin/console doctrine:migrations:migrate
+symfony console doctrine:migrations:migrate
 ```
 
 Again, `migrate` is the whole of it. New tables and columns arrive as versions
@@ -271,7 +273,7 @@ Before a production run:
 pg_dump …
 
 # 2. Read what will run, without running it.
-bin/console doctrine:migrations:migrate --dry-run
+symfony console doctrine:migrations:migrate --dry-run
 ```
 
 Two hatches, for the two ways this goes wrong:
@@ -282,7 +284,7 @@ Two hatches, for the two ways this goes wrong:
   again:
 
   ```bash
-  bin/console doctrine:migrations:version \
+  symfony console doctrine:migrations:version \
       'Uhifadhi\Incident\Migrations\Version20260910045214' --add
   ```
 
@@ -293,7 +295,7 @@ Two hatches, for the two ways this goes wrong:
   database somebody else administers — takes the statements instead of the run:
 
   ```bash
-  bin/console doctrine:migrations:migrate --write-sql=incident-upgrade.sql
+  symfony console doctrine:migrations:migrate --write-sql=incident-upgrade.sql
   ```
 
 ## Learn more
