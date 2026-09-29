@@ -146,12 +146,18 @@ class IncidentParty
      */
     public function initials(): string
     {
-        if (PartyRoleEnum::Animal === $this->role) {
+        return self::initialsOf($this->role, $this->name);
+    }
+
+    /** The same rule for a party written down anywhere else on the record. */
+    public static function initialsOf(PartyRoleEnum $role, string $name): string
+    {
+        if (PartyRoleEnum::Animal === $role) {
             return "\u{2014}";
         }
 
         $letters = '';
-        foreach (preg_split('/[\s.]+/', $this->name, -1, \PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+        foreach (preg_split('/[\s.]+/', $name, -1, \PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
             $letters .= mb_strtoupper(mb_substr($word, 0, 1));
             if (2 === mb_strlen($letters)) {
                 break;

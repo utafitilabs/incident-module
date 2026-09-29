@@ -24,6 +24,8 @@ use Uhifadhi\Incident\Entity\Trait\TimestampableTrait;
 use Uhifadhi\Incident\Enum\IncidentSeverityEnum;
 use Uhifadhi\Incident\Enum\IncidentSourceEnum;
 use Uhifadhi\Incident\Enum\IncidentStatusEnum;
+use Uhifadhi\Incident\Model\PartiesOnRecord;
+use Uhifadhi\Incident\Model\PartyOnRecord;
 use Uhifadhi\Incident\Repository\IncidentRepository;
 
 /**
@@ -660,6 +662,17 @@ class Incident
     public function getParties(): Collection
     {
         return $this->parties;
+    }
+
+    /**
+     * Everybody on the case — the party records and the parties typed into the
+     * report form — once each; what the Involved parties card lists.
+     *
+     * @return list<PartyOnRecord>
+     */
+    public function partiesOnRecord(): array
+    {
+        return PartiesOnRecord::of($this);
     }
 
     public function addParty(IncidentParty $party): static

@@ -230,8 +230,10 @@
 
             {% if seesCaseFile %}
             <div class="c">
-                <span class="tab">Involved parties<span class="src">· {{ incident.parties|length }}</span></span>
-                {% for party in incident.parties %}
+                {# THE RECORDS AND THE REPORT FORM'S PARTIES, once each. #}
+                {% set parties = incident.partiesOnRecord %}
+                <span class="tab">Involved parties<span class="src">· {{ parties|length }}</span></span>
+                {% for party in parties %}
                     <div class="i-party">
                         <span class="av">{{ party.initials }}</span>
                         <span class="nm">{{ party.name }}{% if party.describedAs %}<em>{{ party.describedAs }}</em>{% endif %}</span>
