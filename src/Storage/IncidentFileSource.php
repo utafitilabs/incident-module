@@ -39,7 +39,7 @@ use Uhifadhi\Storage\Registry\HoldsNoRecordFilesTrait;
  *
  * WHAT IS HONEST HERE. A piece of evidence carries what was recorded when its
  * blob was written — a detected mime type, a measured byte size and, for a
- * photograph, a generated preview. The demo seeder writes those bytes through
+ * photograph, a generated preview. The seeder writes those bytes through
  * the platform's own EvidenceStorage (photographs) and its evidence storage
  * (signed documents), so the sample month appears on the hub with real sizes and
  * thumbnails. A row that carries only a KEY and no stored bytes — evidence keyed

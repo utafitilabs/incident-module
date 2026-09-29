@@ -40,7 +40,7 @@ use Uhifadhi\Incident\Tests\Integration\Fixtures\CollectedContentProviders;
  *   {@see CollectedContentProviders} — devkit's collector, played by a fixture —
  *   which is the same door devkit uses and keeps the dependency honest.
  *
- *   AN AREA — nothing installed ships area demo content, which is why the
+ *   AN AREA — nothing installed ships area seed content, which is why the
  *   provider takes the first area the installation has and files nothing when
  *   there is none. There is no provider to drive, so the area is the smallest
  *   honest fixture: one persisted AreaOfInterest with the boundary its NOT NULL

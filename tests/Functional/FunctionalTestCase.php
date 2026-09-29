@@ -22,7 +22,7 @@ use Uhifadhi\Bundle\AreaBundle\Entity\Zone;
 use Uhifadhi\Bundle\RegistryBundle\Service\AreaModuleService;
 use Uhifadhi\Bundle\RegistryBundle\Service\RegistrySyncService;
 use Uhifadhi\Bundle\TeamBundle\Entity\User;
-use Uhifadhi\Incident\Devkit\DemoMonth;
+use Uhifadhi\Incident\Devkit\SeedMonth;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Entity\TaxonomySubcategory;
 use Uhifadhi\Incident\Enum\IncidentSeverityEnum;
@@ -261,10 +261,10 @@ abstract class FunctionalTestCase extends WebTestCase
             now: new \DateTimeImmutable(),
             severity: $severity ?? IncidentSeverityEnum::Moderate,
             reportedBy: $reportedBy,
-            // ANSWERED THE WAY THE FORM WOULD HAVE BEEN: the demo's own answers to
+            // ANSWERED THE WAY THE FORM WOULD HAVE BEEN: the seed's own answers to
             // the blocks this word switched on, so a page under test is reading a
             // record a filer could actually have produced.
-            blockAnswers: DemoMonth::blockAnswersFor($word, 0),
+            blockAnswers: SeedMonth::blockAnswersFor($word, 0),
         );
     }
 

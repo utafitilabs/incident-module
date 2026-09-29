@@ -14,21 +14,21 @@ declare(strict_types=1);
 namespace Uhifadhi\Incident\Tests\Unit\Devkit;
 
 use PHPUnit\Framework\TestCase;
-use Uhifadhi\Incident\Devkit\DemoMonth;
+use Uhifadhi\Incident\Devkit\SeedMonth;
 
 /**
  * THE SAMPLE MONTH ADDS UP TO WHAT THE GALLERY SAYS IT DOES.
  *
  * The preset gallery states the numbers once and every widget repeats them, so a
- * demo that quietly stopped matching would make every screenshot in the design
+ * seed that quietly stopped matching would make every screenshot in the design
  * app a claim the product no longer supports. These assertions are that check,
  * and they are deliberately literal.
  */
-final class DemoMonthTest extends TestCase
+final class SeedMonthTest extends TestCase
 {
     public function testFortySevenIncidentsWereFiled(): void
     {
-        self::assertCount(47, DemoMonth::incidents());
+        self::assertCount(47, SeedMonth::incidents());
     }
 
     /** 31 still open: 7 reported · 13 verified · 11 in progress. */
@@ -57,7 +57,7 @@ final class DemoMonthTest extends TestCase
     public function testTheFourKindsSplitAsTheKpiStripStates(): void
     {
         $ofKind = [];
-        foreach (DemoMonth::incidents() as $row) {
+        foreach (SeedMonth::incidents() as $row) {
             $ofKind[self::kindOf($row['subcategory'])] = (($ofKind[self::kindOf($row['subcategory'])] ?? 0) + 1);
         }
 
@@ -83,7 +83,7 @@ final class DemoMonthTest extends TestCase
         $claimed = 0;
         $approved = 0;
         $paid = 0;
-        foreach (DemoMonth::incidents() as $row) {
+        foreach (SeedMonth::incidents() as $row) {
             if (null === $row['money'] || 'compensation' !== self::directionOf($row['subcategory'])) {
                 continue;
             }
@@ -101,10 +101,10 @@ final class DemoMonthTest extends TestCase
     /** Seven zones, and every row names one of them. */
     public function testEveryRowNamesOneOfTheSevenZones(): void
     {
-        self::assertCount(7, DemoMonth::ZONES);
+        self::assertCount(7, SeedMonth::ZONES);
 
-        foreach (DemoMonth::incidents() as $row) {
-            self::assertContains($row['zone'], DemoMonth::ZONES, $row['reference'].' is filed in an unknown zone.');
+        foreach (SeedMonth::incidents() as $row) {
+            self::assertContains($row['zone'], SeedMonth::ZONES, $row['reference'].' is filed in an unknown zone.');
         }
     }
 
@@ -116,7 +116,7 @@ final class DemoMonthTest extends TestCase
      */
     public function testNothingIsResolvedWithMoneyStillOutstanding(): void
     {
-        foreach (DemoMonth::incidents() as $row) {
+        foreach (SeedMonth::incidents() as $row) {
             if (!\in_array($row['status'], ['resolved', 'closed'], true) || null === $row['money']) {
                 continue;
             }
@@ -132,7 +132,7 @@ final class DemoMonthTest extends TestCase
     /** Every reference is unique, and they run consecutively from INC-0272. */
     public function testTheCaseNumbersAreUniqueAndConsecutive(): void
     {
-        $references = array_column(DemoMonth::incidents(), 'reference');
+        $references = array_column(SeedMonth::incidents(), 'reference');
 
         self::assertSame($references, array_unique($references));
         self::assertSame('INC-0272', $references[0]);
@@ -143,11 +143,11 @@ final class DemoMonthTest extends TestCase
     public function testEveryRowFilesAgainstASubcategoryTheModuleShips(): void
     {
         $known = [];
-        foreach (DemoMonth::kinds() as $category) {
+        foreach (SeedMonth::kinds() as $category) {
             $known = [...$known, ...array_keys($category['subcategories'])];
         }
 
-        foreach (DemoMonth::incidents() as $row) {
+        foreach (SeedMonth::incidents() as $row) {
             self::assertContains($row['subcategory'], $known, $row['reference'].' names a sub-category nothing ships.');
         }
     }
@@ -156,7 +156,7 @@ final class DemoMonthTest extends TestCase
     public function testTheWorkedExampleIsTheDesignsWorkedExample(): void
     {
         $incident = null;
-        foreach (DemoMonth::incidents() as $row) {
+        foreach (SeedMonth::incidents() as $row) {
             if ('INC-0313' === $row['reference']) {
                 $incident = $row;
             }
@@ -214,7 +214,7 @@ final class DemoMonthTest extends TestCase
      */
     private static function row(string $reference): array
     {
-        foreach (DemoMonth::incidents() as $row) {
+        foreach (SeedMonth::incidents() as $row) {
             if ($reference === $row['reference']) {
                 return $row;
             }
@@ -227,7 +227,7 @@ final class DemoMonthTest extends TestCase
     private static function tally(string $column): array
     {
         $counts = [];
-        foreach (DemoMonth::incidents() as $row) {
+        foreach (SeedMonth::incidents() as $row) {
             $value = 'status' === $column ? $row['status'] : $row['severity'];
             $counts[$value] = ($counts[$value] ?? 0) + 1;
         }
@@ -240,7 +240,7 @@ final class DemoMonthTest extends TestCase
     {
         $assessed = 0;
         $settled = 0;
-        foreach (DemoMonth::incidents() as $row) {
+        foreach (SeedMonth::incidents() as $row) {
             if (null === $row['money'] || $direction !== self::directionOf($row['subcategory'])) {
                 continue;
             }
@@ -253,7 +253,7 @@ final class DemoMonthTest extends TestCase
 
     private static function kindOf(string $subcategory): string
     {
-        foreach (DemoMonth::kinds() as $slug => $category) {
+        foreach (SeedMonth::kinds() as $slug => $category) {
             if (isset($category['subcategories'][$subcategory])) {
                 return $slug;
             }
@@ -264,7 +264,7 @@ final class DemoMonthTest extends TestCase
 
     private static function directionOf(string $subcategory): ?string
     {
-        foreach (DemoMonth::kinds() as $category) {
+        foreach (SeedMonth::kinds() as $category) {
             if (isset($category['subcategories'][$subcategory])) {
                 return $category['subcategories'][$subcategory]['money'];
             }

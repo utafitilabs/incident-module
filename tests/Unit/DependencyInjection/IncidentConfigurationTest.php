@@ -45,8 +45,8 @@ final class IncidentConfigurationTest extends TestCase
     }
 
     /**
-     * NO KNOB THAT GATES NOTHING. `dev_tools` existed to keep the demo seeder out
-     * of production; the demo content is a devkit provider now, and devkit is
+     * NO KNOB THAT GATES NOTHING. `dev_tools` existed to keep the seeder out
+     * of production; the seed content is a devkit provider now, and devkit is
      * `require-dev`, so the dependency graph is the firewall and the key would
      * turn nothing off. The tree is closed, so a deployment that still writes it
      * is told rather than ignored.

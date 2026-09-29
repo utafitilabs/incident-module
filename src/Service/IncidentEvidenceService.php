@@ -33,7 +33,7 @@ use Uhifadhi\Storage\Service\EvidenceStorage;
  * ONE WAY IN, whatever sent the bytes — and it is {@see attach()}, which takes a
  * file that has ALREADY been stored. A browser upload reaches it through the
  * platform's upload target, which is handed the stored file by storage itself;
- * an importer or the demo seeder reaches it through {@see store()}, which writes
+ * an importer or the seeder reaches it through {@see store()}, which writes
  * the blob first and then calls the same method. So the private storage, the
  * detected type, the measured size and the generated preview are identical
  * either way, and no path can store the same photograph twice.
@@ -74,7 +74,7 @@ final readonly class IncidentEvidenceService
 
     /**
      * STORE A FILE AND ATTACH IT — the door for a caller that holds bytes and
-     * nothing else: an importer, the demo seeder, a command.
+     * nothing else: an importer, the seeder, a command.
      *
      * The upload component does NOT come through here. Storage has already
      * written the blob by the time a target's `received()` is called, so that

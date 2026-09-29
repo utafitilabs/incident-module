@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Uhifadhi\Incident\Tests\Integration\Fixtures;
 
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
-use Uhifadhi\Incident\Devkit\DemoMonth;
+use Uhifadhi\Incident\Devkit\SeedMonth;
 use Uhifadhi\Incident\Entity\TaxonomySubcategory;
 use Uhifadhi\Incident\Enum\BehaviorBlockEnum;
 use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
@@ -32,8 +32,8 @@ use Uhifadhi\Incident\Service\TaxonomyAdminService;
  * vocabulary the editor cannot, and every test after it would be proving
  * something about a state the product never reaches.
  *
- * THE TABLE IS THE DEMO'S ({@see DemoMonth::kinds()}), so the words the suite
- * files against are the words `fixtures:demo` puts in front of a developer, and
+ * THE TABLE IS THE SEED'S ({@see SeedMonth::kinds()}), so the words the suite
+ * files against are the words `fixtures:seed` puts in front of a developer, and
  * a test that names `livestock-depredation` names the same row the kinds editor
  * shows.
  */
@@ -45,10 +45,10 @@ final readonly class AreaVocabulary
     ) {
     }
 
-    /** Write the demo's kinds and sub-categories into one area. */
+    /** Write the seed's kinds and sub-categories into one area. */
     public function write(AreaOfInterest $area): void
     {
-        foreach (DemoMonth::kinds() as $code => $definition) {
+        foreach (SeedMonth::kinds() as $code => $definition) {
             $kind = $this->admin->createKind($area, $definition['label'], $code);
             $this->admin->setKindLeads($kind, $definition['leads']);
 

@@ -125,7 +125,7 @@ The editors are the next thing this module owes the form.
 points at a `TaxonomySubcategory`, whose kind belongs to the same area; two areas
 that use the same wire-code hold two rows, and neither can reach the other's.
 There is no installation-wide vocabulary behind it and nothing is seeded on
-install, which is why a new area's kinds section opens empty and the demo's four
+install, which is why a new area's kinds section opens empty and the seed's four
 kinds arrive only through devkit.
 
 The admin's "copy from another area" gesture is

@@ -33,7 +33,7 @@ before the first incident is filed there. **What a sub-category's form asks is
 not among them:** the questions come from the behaviour blocks it switches on and
 from nowhere else, so nothing in the product invents a field and there is no form
 builder (see `docs/the-model.md`). Sample
-kinds exist only in the devkit demo content, which writes them into an area
+kinds exist only in the devkit seed content, which writes them into an area
 through that same editor's service.
 
 ## Installation
@@ -107,7 +107,7 @@ Then, in the host:
    seeded, so this is the step between installing the module and filing the first
    incident; a bundle that wrote somebody's classification scheme into their
    database on boot would be making that decision for them. In a development
-   installation, `bin/console fixtures:demo` writes a month of sample incidents
+   installation, `bin/console fixtures:seed` writes a month of sample incidents
    and the kinds they are filed under.
 The Stimulus controllers — `incident-board`, `incident-report` and the rest;
 `incident-filters` is deprecated, inert and off by default, and goes in 0.4.0
@@ -314,7 +314,7 @@ Two hatches, for the two ways this goes wrong:
   taxonomy tree, and what `leads` does and does not decide.
 - [Evidence on the Files hub](docs/files-hub.md) — the
   `uhifadhi/storage-module` contract, and what this module honestly knows about a file.
-- [Dev tooling](docs/dev-tooling.md) — the demo month this module declares for
+- [Dev tooling](docs/dev-tooling.md) — the seed month this module declares for
   devkit to seed, the two commands that stay, and what the declaration cannot
   write yet.
 - [Development](docs/development.md) — `composer check`, the tooling levels, and

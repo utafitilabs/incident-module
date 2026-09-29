@@ -95,7 +95,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
  * editor before the first incident is filed there. Naming somebody's
  * classification scheme for them is a decision this bundle does not get to make,
  * which is why the only place the design's four kinds still exist is the devkit
- * demo content.
+ * seed content.
  */
 final class UhifadhiIncidentBundle extends AbstractBundle
 {
@@ -543,7 +543,7 @@ final class UhifadhiIncidentBundle extends AbstractBundle
             ->tag('console.command');
 
         /*
-         * THE DEMO CONTENT, AS AN INERT DECLARATION. devkit — dev-only, installed
+         * THE SEED CONTENT, AS AN INERT DECLARATION. devkit — dev-only, installed
          * through `require-dev` — is what collects this and materialises the
          * command that runs it; in a production build nothing collects it and it
          * is an ordinary service nobody ever asks anything of. That dependency
