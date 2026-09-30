@@ -27,11 +27,13 @@ use Uhifadhi\Bundle\AreaBundle\Overview\OverviewCopyProviderInterface;
 use Uhifadhi\Bundle\AreaBundle\Overview\PulseProviderInterface;
 use Uhifadhi\Bundle\AreaBundle\Repository\AreaOfInterestRepository;
 use Uhifadhi\Bundle\AreaBundle\Repository\ZoneRepository;
+use Uhifadhi\Bundle\ShellBundle\Contract\DeletionPageInterface;
 use Uhifadhi\Bundle\ShellBundle\Widget\Registry\WidgetSurfaceInterface;
 use Uhifadhi\Bundle\ShellBundle\Widget\Service\WidgetEndpoint;
 use Uhifadhi\Bundle\ShellBundle\Widget\Service\WidgetService;
 use Uhifadhi\Bundle\TeamBundle\Access\Door;
 use Uhifadhi\Contracts\Access\ConcernSourceInterface;
+use Uhifadhi\Contracts\Deletion\DeletionContributorInterface;
 use Uhifadhi\Contracts\Kpi\DepartmentKpiProviderInterface;
 use Uhifadhi\Contracts\Kpi\StationFigureProviderInterface;
 use Uhifadhi\Contracts\Kpi\ZoneFigureProviderInterface;
@@ -48,6 +50,10 @@ use Uhifadhi\Incident\Controller\IncidentReportController;
 use Uhifadhi\Incident\Controller\IncidentSettingsController;
 use Uhifadhi\Incident\Controller\IncidentTaxonomyController;
 use Uhifadhi\Incident\Controller\IncidentWidgetsController;
+use Uhifadhi\Incident\Deletion\IncidentDeletion;
+use Uhifadhi\Incident\Deletion\IncidentFileRemover;
+use Uhifadhi\Incident\Deletion\IncidentLinksDeletion;
+use Uhifadhi\Incident\Deletion\PersonIncidentDeletion;
 use Uhifadhi\Incident\DependencyInjection\IncidentConfiguration;
 use Uhifadhi\Incident\Devkit\IncidentContentProvider;
 use Uhifadhi\Incident\Module\IncidentDepartmentKpiProvider;
@@ -439,9 +445,25 @@ final class UhifadhiIncidentBundle extends AbstractBundle
                     // is installed, which a host running SecurityBundle already has.
                     service('security.csrf.token_manager'),
                     service('security.token_storage'),
+                    service(DeletionPageInterface::SERVICE)->nullOnInvalid(),
                 ])
                 ->public();
             $services->alias(IncidentDetailController::class, 'incident.controller.detail')->public();
+
+            // A SUPER ADMIN DELETES (ruled 28 Sep, #48): an incident, what a
+            // deleted person reported, and the link an incident keeps to a
+            // record that goes.
+            $services->set('incident.deletion.files', IncidentFileRemover::class)
+                ->args([service('storage.evidence_storage')]);
+            $services->set('incident.deletion.incident', IncidentDeletion::class)
+                ->args([service('doctrine.orm.entity_manager'), service('router'), service('incident.deletion.files')])
+                ->tag(DeletionContributorInterface::TAG);
+            $services->set('incident.deletion.links', IncidentLinksDeletion::class)
+                ->args([service('doctrine.orm.entity_manager')])
+                ->tag(DeletionContributorInterface::TAG);
+            $services->set('incident.deletion.person', PersonIncidentDeletion::class)
+                ->args([service('doctrine.orm.entity_manager'), service('incident.deletion.files')])
+                ->tag(DeletionContributorInterface::TAG);
 
             // The money write surface's door. Registered under the same guard as
             // the transition endpoint and for the same reason: recording money

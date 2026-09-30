@@ -30,6 +30,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Twig\Environment;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Bundle\RegistryBundle\RegistryBundle;
+use Uhifadhi\Bundle\ShellBundle\Contract\DeletionPageInterface;
 use Uhifadhi\Contracts\Entity\UserInterface;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Enum\IncidentTransitionEnum;
@@ -112,6 +113,8 @@ final class IncidentDetailController
         private readonly bool $filePages = false,
         private readonly ?CsrfTokenManagerInterface $csrfTokenManager = null,
         private readonly ?TokenStorageInterface $tokenStorage = null,
+        /** A SUPER ADMIN DELETES AN INCIDENT (ruled 28 Sep, #48): the core's one delete page. */
+        private readonly ?DeletionPageInterface $deletionPage = null,
     ) {
     }
 
@@ -226,6 +229,29 @@ final class IncidentDetailController
     public static function csrfTokenId(AreaOfInterest $area): string
     {
         return 'incident_transition_'.$area->getUuidString();
+    }
+
+    /** A SUPER ADMIN DELETES AN INCIDENT (ruled 28 Sep, #48): counted, typed, one audit line. */
+    #[Route(
+        '/areas/{uuid}/modules/incidents/{reference}/delete',
+        name: 'incident_delete',
+        requirements: ['uuid' => Requirement::UUID, 'reference' => '[A-Z]{2,6}-\d{2,8}'],
+        methods: ['GET', 'POST'],
+    )]
+    // The page asks the Super Admin tier itself; the pair keeps this module's
+    // rule that every route names what it enforces, and the tiers hold it.
+    #[IsGranted('incidents.read', subject: 'area')]
+    public function delete(
+        Request $request,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] AreaOfInterest $area,
+        string $reference,
+    ): Response {
+        $incident = $this->incidentIn($area, $reference);
+        if (null === $this->deletionPage) {
+            throw new NotFoundHttpException('Deleting is not installed here.');
+        }
+
+        return $this->deletionPage->respond($request, $incident);
     }
 
     /**

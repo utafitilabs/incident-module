@@ -37,6 +37,12 @@
     {%- if money and money.isAssessed and door('case-money.read', area) %} · {{ incident.money.currency }} {{ money.payable|number_format(0, '.', ',') }} {{ money.direction.assessedWord }}, {{ money.settled|number_format(0, '.', ',') }} {{ money.direction.settledWord }}{% endif %}
     {%- if door('case-files.read', area) %} · {{ incident.evidence|length }} pieces of evidence · {{ incident.parties|length }} parties{% endif %}.{% endblock %}
 
+{% block shell_page_actions %}
+    {{ parent() }}
+    {# A SUPER ADMIN DELETES (ruled 28 Sep, #48): its own page, counted and typed. #}
+    {% if may_delete() %}<a class="tgl w-act" href="{{ path('incident_delete', {uuid: area.uuid, reference: incident.reference}) }}">{{ ux_icon('shell:trash-2') }} Delete</a>{% endif %}
+{% endblock %}
+
 {% block incident_page %}
     {% set money = incident.money %}
     {# THE WAY BACK, on the shell's own pill — the settled cross-module idiom for
@@ -250,7 +256,11 @@
 
             <div class="c">
                 <span class="tab">Provenance &amp; links</span>
-                {% if incident.hasProvenance %}
+                {% if incident.hasProvenance and incident.sourceRecordDeletedAt %}
+                    {# THE RECORD IT CAME FROM WAS DELETED (ruled 28 Sep, #48): it stays, without its link. #}
+                    <span class="i-prov">{{ ux_icon('incident:git-branch') }}
+                        <span class="bd"><b>{{ incident.sourceRecordLabel }}</b> — this incident was filed from that record, which has since been deleted.<em>source: {{ incident.source.badge }}</em></span></span>
+                {% elseif incident.hasProvenance %}
                     <a class="i-prov" href="{{ incident.sourceRecordUrl ?? '#' }}">{{ ux_icon('incident:git-branch') }}
                         <span class="bd"><b>{{ incident.sourceRecordLabel }}</b> — this incident was filed from that record and stays
                             linked to it.<em>source: {{ incident.source.badge }}</em></span>

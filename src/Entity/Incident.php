@@ -207,6 +207,14 @@ class Incident
     private ?string $sourceRecordUrl = null;
 
     /**
+     * WHEN THE RECORD THIS INCIDENT WAS FILED FROM WAS DELETED (ruled 28 Sep,
+     * #48: the incident stays, losing only its link). The label and the uuid
+     * stay, so it still says where it came from; the link goes.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $sourceRecordDeletedAt = null;
+
+    /**
      * THE ANSWERS TO THE QUESTIONS THE SUB-CATEGORY'S BEHAVIOUR BLOCKS ASK, kept
      * per block, in the shape the block asks in: a block whose questions are asked
      * once keeps `{key: answer}`, and a block that is a row the filer adds to keeps
@@ -582,6 +590,20 @@ class Incident
     public function getSourceRecordUrl(): ?string
     {
         return $this->sourceRecordUrl;
+    }
+
+    /** The record this was filed from is gone: keep saying where it came from, drop the link. */
+    public function dropSourceLink(\DateTimeImmutable $at): static
+    {
+        $this->sourceRecordUrl = null;
+        $this->sourceRecordDeletedAt = $at;
+
+        return $this;
+    }
+
+    public function getSourceRecordDeletedAt(): ?\DateTimeImmutable
+    {
+        return $this->sourceRecordDeletedAt;
     }
 
     public function hasProvenance(): bool
