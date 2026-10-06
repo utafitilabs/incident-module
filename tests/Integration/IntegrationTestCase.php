@@ -177,7 +177,7 @@ abstract class IntegrationTestCase extends KernelTestCase
             $user->setPosition($position);
 
             $placement = new Placement();
-            $placement->acrossTheOrganization()->inDepartments([$department]);
+            $placement->acrossTheOrganization()->inDepartment($department);
             $this->em->persist($placement);
             $user->setPlacement($placement);
         }
