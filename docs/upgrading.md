@@ -31,9 +31,10 @@ there with nothing behind it.
 
 **What changed.** The module requires `uhifadhi/uhifadhi` `^0.2` and
 `uhifadhi/storage-module` `^0.4`. Under core 0.2 every person but the tiers
-belongs to exactly one department and may support others; a pair this module
-declares reaches a person only where they serve a department that runs
-incidents, and somebody with no department reaches no incident at all.
+belongs to exactly one department and may support others; where departments run
+incidents, a pair this module declares reaches a person only if they belong to
+or support one of them, and somebody with no department reaches no incident
+at all.
 
 The four acts that change somebody else's incident — moving it on, settling
 its money, attaching evidence, taking evidence off — are declared powers now,

@@ -21,8 +21,9 @@ vanish with the module on uninstall. Installing it hands nobody a new power.
 Every one of them names this module, which is how the third question a check
 asks — *does the person serve a department that runs incidents* — is
 answerable about them at all. A person serves the one department they belong
-to and any they support; somebody with no department reaches no incident at
-all, whatever their position holds. All four offer **organization** or **area** and
+to and any they support; where no department runs incidents the question does
+not arise. Somebody with no department reaches no incident at all, whatever
+their position holds. All four offer **organization** or **area** and
 not department: an incident happens on ground.
 
 | Concern | Verbs | What it is about |
