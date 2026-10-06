@@ -84,9 +84,15 @@ final class FixedGrantVoter extends Voter
         ];
     }
 
-    protected function supports(string $attribute, mixed $subject): bool
+    /** The questions it answers, named, as every voter names them. */
+    public function supportsAttribute(string $attribute): bool
     {
         return \in_array($attribute, self::everything(), true);
+    }
+
+    protected function supports(string $attribute, mixed $subject): bool
+    {
+        return $this->supportsAttribute($attribute);
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
