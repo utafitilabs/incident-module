@@ -33,6 +33,7 @@ use Uhifadhi\Bundle\ShellBundle\Widget\Service\WidgetEndpoint;
 use Uhifadhi\Bundle\ShellBundle\Widget\Service\WidgetService;
 use Uhifadhi\Bundle\TeamBundle\Access\Door;
 use Uhifadhi\Contracts\Access\ConcernSourceInterface;
+use Uhifadhi\Contracts\Access\PowerSourceInterface;
 use Uhifadhi\Contracts\Deletion\DeletionContributorInterface;
 use Uhifadhi\Contracts\Kpi\DepartmentKpiProviderInterface;
 use Uhifadhi\Contracts\Kpi\StationFigureProviderInterface;
@@ -42,6 +43,7 @@ use Uhifadhi\Contracts\Performance\PerformanceGeoProviderInterface;
 use Uhifadhi\Contracts\Performance\PerformanceTopicProviderInterface;
 use Uhifadhi\Incident\Access\IncidentConcerns;
 use Uhifadhi\Incident\Access\IncidentDoors;
+use Uhifadhi\Incident\Access\IncidentPowers;
 use Uhifadhi\Incident\Command\CloseDueCommand;
 use Uhifadhi\Incident\Controller\IncidentAreaListController;
 use Uhifadhi\Incident\Controller\IncidentDetailController;
@@ -270,6 +272,12 @@ final class UhifadhiIncidentBundle extends AbstractBundle
          */
         $services->set('incident.access.concerns', IncidentConcerns::class)
             ->tag(ConcernSourceInterface::TAG);
+
+        // WHAT ONE PERSON MAY DO TO ANOTHER'S INCIDENT, for Team › Permissions
+        // to ask as each kind of person. Tagged by hand for the same reason.
+        $services->set('incident.access.powers', IncidentPowers::class)
+            ->args([service(IncidentRepository::class)])
+            ->tag(PowerSourceInterface::TAG);
 
         /*
          * THE DOOR, ASKED FROM WHERE A TEMPLATE CANNOT ASK IT. This module's
