@@ -194,6 +194,25 @@ final class IncidentCaseServiceTest extends IntegrationTestCase
         self::assertSame($before + 1, $this->reread($incident)->getEvents()->count());
     }
 
+    /**
+     * THE TIMELINE IS READ BY EVERYBODY WHO READS THE CASE, and a sentence
+     * stored on it cannot be masked per reader the way a page asks
+     * AddressSight, so a person without a name is never named by their address.
+     */
+    public function testAssigningSomebodyWithoutANameLeavesNoAddressOnTheTimeline(): void
+    {
+        $incident = $this->filedIncident();
+
+        $this->cases()->assign($incident, $this->aUser('nameless@example.test', '', ''));
+
+        $bodies = array_map(static fn ($event): string => $event->getBody(), $this->reread($incident)->getEvents()->toArray());
+        self::assertNotSame([], $bodies);
+        foreach ($bodies as $body) {
+            self::assertStringNotContainsString('nameless@example.test', $body);
+        }
+        self::assertContains('Assigned to a person with no name on their account.', $bodies);
+    }
+
     /** A LINK IS A CLAIM, so it carries who made it and what they claimed. */
     public function testTwoIncidentsAreLinkedWithTheClaimAndItsAuthor(): void
     {

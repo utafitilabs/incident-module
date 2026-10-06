@@ -225,11 +225,15 @@ final readonly class IncidentCaseService
             ->withActor($actor, $actorName);
     }
 
-    /** How a person is named in a sentence the timeline prints. */
+    /**
+     * How a person is named in a sentence the timeline prints. Never by their
+     * address: the sentence is stored once and read by everybody who reads the
+     * case, so it cannot be masked for a reader who may not see addresses.
+     */
     private static function nameOf(UserInterface $user): string
     {
         $name = trim((string) $user->getFullName());
 
-        return '' !== $name ? $name : (string) $user->getEmail();
+        return '' !== $name ? $name : 'a person with no name on their account';
     }
 }
