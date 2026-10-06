@@ -62,7 +62,7 @@ The bundle registers via Flex (`"type": "symfony-bundle"`), which adds
 
 ### Switching it on
 
-A module is installed but **parked**: every page of it answers 404 in an area that has not taken it. An administrator switches it on per area from that area's module grid, and grants the module's permissions to the positions that need them from the positions screen. Reading needs the module's `read` grant; nothing else is required to see it.
+A module is installed but **parked**: every page of it answers 404 in an area that has not taken it. An administrator switches it on per area from that area's module grid, and grants the module's permissions to the positions that need them from the positions screen. Reading needs the module's `read` grant, held by somebody placed at the area who belongs to or supports a department that runs incidents; a person with no department reaches no incident. Who may change somebody else's incident is shown on Team › Permissions (`docs/permissions.md`).
 
 ## Getting started
 

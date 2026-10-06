@@ -8,6 +8,8 @@
 - [An aggregate is withheld with the fact it aggregates](#an-aggregate-is-withheld-with-the-fact-it-aggregates)
 - [Why filing and managing are split](#why-filing-and-managing-are-split)
 - [Doors](#doors)
+- [Powers: somebody else's incident](#powers-somebody-elses-incident)
+- [The authority table](#the-authority-table)
 
 ## The four concerns this module declares
 
@@ -17,8 +19,10 @@ grants matrix through `Uhifadhi\Contracts\Access\ConcernSourceInterface` (servic
 vanish with the module on uninstall. Installing it hands nobody a new power.
 
 Every one of them names this module, which is how the third question a check
-asks — *is the person placed in a department that runs incidents* — is
-answerable about them at all. All four offer **organization** or **area** and
+asks — *does the person serve a department that runs incidents* — is
+answerable about them at all. A person serves the one department they belong
+to and any they support; somebody with no department reaches no incident at
+all, whatever their position holds. All four offer **organization** or **area** and
 not department: an incident happens on ground.
 
 | Concern | Verbs | What it is about |
@@ -133,3 +137,42 @@ Two of them ask a second question first. The filing control and the widget
 library also depend on whether the writing screens **exist** in this
 installation at all (they need SecurityBundle), which is the `recordScreens`
 flag — a fact about the installation, not about the viewer.
+
+## Powers: somebody else's incident
+
+An incident is filed by one person and worked by others, so four acts here
+change somebody else's record. Each is declared through
+`Uhifadhi\Contracts\Access\PowerSourceInterface` (`Uhifadhi\Incident\Access\IncidentPowers`,
+service `incident.access.powers`, tagged `uhifadhi.access.powers` by hand), in the
+group *Somebody else's records*, and Team › Permissions asks each of them as
+every kind of person, about a colleague in their area and about somebody
+beyond it:
+
+| Power | Asks |
+|---|---|
+| verify, respond to, resolve or close somebody else's incident | `incidents.manage` |
+| record or waive the money on somebody else's incident | `case-money.manage` |
+| attach evidence to somebody else's incident | `case-files.manage` |
+| take evidence off somebody else's incident | `case-files.delete` |
+
+The question is asked of the area the person's latest filed incident lies in,
+which is the subject the routes ask it of. Somebody who has filed nothing yet
+is asked about where their next case would be filed: the one area they are
+placed at, or — placed across several, across the organization or nowhere —
+the whole organization.
+
+Deleting an incident is not among them: the delete page is the core's, and it
+answers to a Super Admin alone.
+
+## The authority table
+
+`tests/Functional/AuthorityTableTest.php` calls every route of this module as
+every kind of person the core's `Uhifadhi\Test\AuthorityTableTestCase` knows,
+in a kernel shaped like an installation and answered by the core's own voters,
+and holds the outcomes against `tests/Functional/authority-table.md`. A change
+in who may open what fails the build until the table is recorded again and its
+diff is read:
+
+```console
+UHIFADHI_RECORD_AUTHORITY_TABLE=1 vendor/bin/phpunit tests/Functional/AuthorityTableTest.php
+```

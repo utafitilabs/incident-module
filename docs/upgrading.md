@@ -7,6 +7,7 @@ hand is a release with a note under it.
 ## Contents
 
 - [The rule for anything this module ships to a host](#the-rule-for-anything-this-module-ships-to-a-host)
+- [0.5.0 — core 0.2: one department each, and powers on Team › Permissions](#050--core-02-one-department-each-and-powers-on-team--permissions)
 - [0.4.1 — four concerns, and two of them are sensitive (BREAKING)](#041--four-concerns-and-two-of-them-are-sensitive-breaking)
 - [0.3.0 — the filter dropdowns became the shell's](#030--the-filter-dropdowns-became-the-shells)
 - [0.4.0 — the shared taxonomy is dropped](#040--the-shared-taxonomy-is-dropped)
@@ -25,6 +26,30 @@ AFTER that deletes it. The reason is mechanical rather than polite — Flex keep
 a host's own `assets/controllers.json` entry when a package it already has is
 updated, so anything this package deletes in one step stays switched on over
 there with nothing behind it.
+
+## 0.5.0 — core 0.2: one department each, and powers on Team › Permissions
+
+**What changed.** The module requires `uhifadhi/uhifadhi` `^0.2` and
+`uhifadhi/storage-module` `^0.4`. Under core 0.2 every person but the tiers
+belongs to exactly one department and may support others; a pair this module
+declares reaches a person only where they serve a department that runs
+incidents, and somebody with no department reaches no incident at all.
+
+The four acts that change somebody else's incident — moving it on, settling
+its money, attaching evidence, taking evidence off — are declared powers now,
+so Team › Permissions shows who may do each (see `docs/permissions.md`).
+
+An assignment written on the timeline names a person without a name on their
+account in words; it used to fall back to their sign-in address, which every
+reader of the case would then have read.
+
+### What an installation must do
+
+Widen the caret to `^0.5` beside the core's `^0.2`, then the usual
+`doctrine:migrations:migrate` and `registry:sync`. This release ships no
+migration of its own. Check that everybody who works incidents has a
+department after the core's own upgrade: a person without one is refused every
+page of this module.
 
 ## 0.4.1 — four concerns, and two of them are sensitive (BREAKING)
 
