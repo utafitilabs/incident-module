@@ -7,6 +7,7 @@ hand is a release with a note under it.
 ## Contents
 
 - [The rule for anything this module ships to a host](#the-rule-for-anything-this-module-ships-to-a-host)
+- [Next — the performance topic reads stored figures](#next--the-performance-topic-reads-stored-figures)
 - [0.5.0 — core 0.2: one department each, and powers on Team › Permissions](#050--core-02-one-department-each-and-powers-on-team--permissions)
 - [0.4.1 — four concerns, and two of them are sensitive (BREAKING)](#041--four-concerns-and-two-of-them-are-sensitive-breaking)
 - [0.3.0 — the filter dropdowns became the shell's](#030--the-filter-dropdowns-became-the-shells)
@@ -26,6 +27,25 @@ AFTER that deletes it. The reason is mechanical rather than polite — Flex keep
 a host's own `assets/controllers.json` entry when a package it already has is
 updated, so anything this package deletes in one step stays switched on over
 there with nothing behind it.
+
+## Next — the performance topic reads stored figures
+
+**What changed.** The Incidents topic on `/departments/performance` no longer
+loads every incident of every period it draws. The worker files each area's
+figures a period on the core's facts ledger (`IncidentFactProvider`, module
+`incidents`) and the topic reads them; a change to an incident asks the worker
+to file its months again. Requires `uhifadhi/uhifadhi` `^0.2.1`.
+
+**What to do.** The open month, quarter and year are filed by the core's hourly
+schedule, so the worker must be running. Months that closed before the upgrade
+have no figures until they are filed once — the topic's history and charts show
+them as gaps until then:
+
+```bash
+php bin/console uhifadhi:facts:rebuild --module=incidents --from=2025-10
+```
+
+`--from` is the oldest month the charts should show; a year back covers them.
 
 ## 0.5.0 — core 0.2: one department each, and powers on Team › Permissions
 

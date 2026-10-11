@@ -13,10 +13,13 @@ declare(strict_types=1);
 
 namespace Uhifadhi\Incident\Tests\Integration\Module;
 
+use Doctrine\Bundle\DoctrineBundle\Middleware\BacktraceDebugDataHolder;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Bundle\RegistryBundle\Entity\AreaModule;
 use Uhifadhi\Bundle\RegistryBundle\Entity\Module;
+use Uhifadhi\Bundle\RegistryBundle\Service\FactRebuildService;
 use Uhifadhi\Bundle\TeamBundle\Entity\Department;
+use Uhifadhi\Contracts\Facts\FactPeriod;
 use Uhifadhi\Contracts\Kpi\FigurePeriod;
 use Uhifadhi\Contracts\Performance\ChartKind;
 use Uhifadhi\Contracts\Performance\MatrixColumn;
@@ -51,9 +54,59 @@ final class IncidentPerformanceTopicTest extends IntegrationTestCase
 {
     private const string AUGUST = '2026-08-19 09:00:00';
 
+    /**
+     * WHAT A DRAWING OF THE TOPIC ASKS THE DATABASE does not grow with the
+     * incidents filed: many more, the same questions.
+     */
+    public function testTheTopicAsksAsMuchOfManyIncidentsAsOfAFew(): void
+    {
+        $world = $this->world();
+        $few = $this->statementsToDraw();
+        self::assertGreaterThan(0, $few, 'the query log is on');
+
+        foreach (range(1, 30) as $i) {
+            $this->anIncident($i % 2 ? $world['north'] : $world['south'], 'roadkill', 'Roadkill '.$i, new \DateTimeImmutable(\sprintf('2026-%02d-%02d 09:00:00', 6 + $i % 3, 1 + $i % 27)));
+        }
+        $this->em->flush();
+
+        self::assertSame($few, $this->statementsToDraw());
+    }
+
+    /** BEFORE THE WORKER HAS RUN there is nothing to read, and the topic counts nothing itself. */
+    public function testBeforeTheWorkerRanThereIsNoFigure(): void
+    {
+        $this->world();
+
+        /** @var IncidentPerformanceTopic $topic */
+        $topic = $this->service('incident.performance_topic');
+        foreach ($topic->kpis(PerformanceScope::organization(), self::period()) as $kpi) {
+            self::assertNull($kpi->value, $kpi->key);
+        }
+    }
+
+    private function statementsToDraw(): int
+    {
+        $topic = $this->topic();
+        $log = static::getContainer()->get('doctrine.debug_data_holder');
+        self::assertInstanceOf(BacktraceDebugDataHolder::class, $log);
+        $log->reset();
+
+        $topic->kpis(PerformanceScope::organization(), self::period());
+        $topic->charts(PerformanceScope::organization(), self::period());
+
+        return \count($log->getData()['default'] ?? []);
+    }
+
     /** The wired topic, so the tag and the arguments are under test too. */
     private function topic(): IncidentPerformanceTopic
     {
+        // EVERY MONTH A RUN READS, FILED as the worker would have by now:
+        // the topic reads the ledger and counts nothing itself.
+        $this->em->flush();
+        $rebuild = $this->service('registry.facts.rebuild');
+        self::assertInstanceOf(FactRebuildService::class, $rebuild);
+        $rebuild->rebuild(FactPeriod::monthsBetween(new \DateTimeImmutable('2025-08-01'), new \DateTimeImmutable('2026-12-01')), 'incidents');
+
         /** @var IncidentPerformanceTopic $topic */
         $topic = $this->service('incident.performance_topic');
 

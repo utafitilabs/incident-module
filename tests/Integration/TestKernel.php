@@ -43,6 +43,7 @@ use Uhifadhi\Contracts\Kpi\StationFigureProviderInterface;
 use Uhifadhi\Contracts\Kpi\ZoneFigureProviderInterface;
 use Uhifadhi\Contracts\Performance\PerformanceGeoProviderInterface;
 use Uhifadhi\Contracts\Performance\PerformanceTopicProviderInterface;
+use Uhifadhi\Contracts\Queue\AsyncMessageInterface;
 use Uhifadhi\Incident\Repository\AreaListEntryRepository;
 use Uhifadhi\Incident\Repository\IncidentRepository;
 use Uhifadhi\Incident\Repository\TaxonomySubcategoryRepository;
@@ -168,6 +169,19 @@ final class TestKernel extends Kernel
             'assets' => true,
             'asset_mapper' => [
                 'paths' => [__DIR__.'/Fixtures/app/assets' => ''],
+            ],
+            // THE QUEUE AS THE CORE'S RECIPE WRITES IT for production: one
+            // Doctrine table the registry's migration creates, and every
+            // message carrying the core's marker goes to `async` — so a test
+            // reads what a change queued from the table.
+            // https://symfony.com/doc/current/messenger.html#doctrine-transport
+            'messenger' => [
+                'failure_transport' => 'failed',
+                'transports' => [
+                    'async' => ['dsn' => 'doctrine://default?auto_setup=0', 'options' => ['queue_name' => 'async']],
+                    'failed' => ['dsn' => 'doctrine://default?auto_setup=0', 'options' => ['queue_name' => 'failed']],
+                ],
+                'routing' => [AsyncMessageInterface::class => 'async'],
             ],
         ]);
 
@@ -386,6 +400,14 @@ final class TestKernel extends Kernel
             // a token into so they have somebody to ask about.
             'incident.access.doors',
             'security.token_storage',
+            // The facts ledger: the provider, the core's rebuild that files
+            // what it returns, the reader a page reads it with, and the queue
+            // a change asks for a recompute on.
+            'incident.facts',
+            'incident.facts_listener',
+            'registry.facts.rebuild',
+            'registry.facts.reader',
+            'messenger.transport.async',
         ] as $id) {
             $services->alias('test_public.'.$id, $id)->public();
         }

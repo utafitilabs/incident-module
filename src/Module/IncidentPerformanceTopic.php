@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Uhifadhi\Incident\Module;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Contracts\Access\Verb;
+use Uhifadhi\Contracts\Facts\FactReaderInterface;
 use Uhifadhi\Contracts\Kpi\FigurePeriod;
 use Uhifadhi\Contracts\Performance\ChartKind;
 use Uhifadhi\Contracts\Performance\ChartSeries;
@@ -30,12 +33,10 @@ use Uhifadhi\Contracts\Performance\TopicKpi;
 use Uhifadhi\Contracts\Performance\TopicMatrix;
 use Uhifadhi\Incident\Access\IncidentConcerns;
 use Uhifadhi\Incident\Access\IncidentDoors;
-use Uhifadhi\Incident\Entity\Incident;
-use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
-use Uhifadhi\Incident\Model\IncidentReading;
+use Uhifadhi\Incident\Facts\IncidentFactProvider;
 use Uhifadhi\Incident\Model\IncidentTopicGround;
+use Uhifadhi\Incident\Model\IncidentTopicReadings;
 use Uhifadhi\Incident\Model\IncidentTopicSlice;
-use Uhifadhi\Incident\Model\PerformanceReadings;
 use Uhifadhi\Incident\Repository\IncidentRepository;
 
 /**
@@ -127,6 +128,8 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
     public function __construct(
         private DepartmentDirectoryInterface $directory,
         private IncidentRepository $incidents,
+        private FactReaderInterface $facts,
+        private EntityManagerInterface $entityManager,
         /**
          * WHETHER THE COMPENSATION COLUMN MAY BE DRAWN for this reader, over
          * the scope the page is on. Claims are money, and money is a concern
@@ -224,25 +227,32 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
             return $this->nothingRunsHere($scope);
         }
 
-        $run = $this->readingsOver($this->pageGround($scope, $rows), self::run($period, self::PERIODS));
+        $ground = $this->pageGround($scope, $rows);
+        $read = $this->readings($scope);
+        $run = $this->readingsOver($ground, self::run($period, self::PERIODS), $read);
+        $asOf = $read->asOf($ground, $period);
 
         return [
             self::figure($run, self::FILED, 'Filed', ColumnPolarity::None,
-                static fn (array $p): float => (float) $p['filed']->filed(),
+                static fn (array $p): ?float => $p['filed'],
                 caption: \sprintf('across %d department%s that read %s', \count($rows), 1 === \count($rows) ? '' : 's', $this->name),
+                asOf: $asOf,
             ),
             self::figure($run, self::OPEN_PAST_TARGET, 'Open', ColumnPolarity::Down,
-                static fn (array $p): float => (float) $p['filed']->openPastTarget($p['period']->until),
+                static fn (array $p): ?float => $p['pastTarget'],
                 caption: 'past their target',
+                asOf: $asOf,
             ),
             self::figure($run, self::MEDIAN_DAYS_TO_CLOSE, 'Median days to close', ColumnPolarity::Down,
-                static fn (array $p): ?float => $p['resolved']->medianDaysToClose(),
-                caption: self::targetsCaption($run[self::PERIODS - 1]['resolved']),
+                static fn (array $p): ?float => $p['median'],
+                caption: self::targetsCaption($this->incidents->findResolvedTermHoursByScopeBetween($ground->areaUuid, $period->from, $period->until)),
                 unit: 'd',
+                asOf: $asOf,
             ),
             self::figure($run, self::RESOLVED, 'Resolved', ColumnPolarity::Up,
-                static fn (array $p): float => (float) $p['resolved']->filed(),
+                static fn (array $p): ?float => $p['resolved'],
                 caption: 'this period',
+                asOf: $asOf,
             ),
         ];
     }
@@ -262,7 +272,8 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
     {
         $ground = $this->pageGround($scope, $this->directory->forScope($scope)->answeringFor($this->slug));
         $periods = self::run($period, self::CHART_PERIODS);
-        $run = $this->readingsOver($ground, $periods);
+        $read = $this->readings($scope);
+        $run = $this->readingsOver($ground, $periods, $read);
 
         $flow = new TopicChart(
             key: 'incidents.flow',
@@ -270,14 +281,14 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
             kind: ChartKind::Line,
             labels: array_map(static fn (FigurePeriod $past): string => mb_strtolower($past->from->format('M')), $periods),
             series: [
-                new ChartSeries('Filed', self::series($run, static fn (array $p): float => (float) $p['filed']->filed())),
-                new ChartSeries('Closed', self::series($run, static fn (array $p): float => (float) $p['resolved']->filed())),
+                new ChartSeries('Filed', self::series($run, static fn (array $p): ?float => $p['filed'])),
+                new ChartSeries('Closed', self::series($run, static fn (array $p): ?float => $p['resolved'])),
             ],
-            caption: 'Re-measured from the records of each period — a period before this module was running is a gap, not a nought.',
+            caption: 'What each period filed and closed — a period before this module was running is a gap, not a nought.',
         );
 
-        $open = $this->readingsOf($this->incidents->findOpenByScope($ground->areaUuid));
-        $buckets = $open->openAgeBuckets($period->until);
+        $buckets = array_map(static fn (string $key): ?float => $read->figure($ground, $period, $key), IncidentFactProvider::AGED);
+        $nothingOpen = 0.0 === array_sum(array_map(static fn (?float $n): float => $n ?? 0.0, $buckets));
 
         $age = new TopicChart(
             key: 'incidents.age',
@@ -289,9 +300,7 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
             // an empty floor that reads as a measured one.
             series: [new ChartSeries(
                 'Open incidents',
-                $open->isEmpty()
-                    ? [null, null, null, null]
-                    : array_map(static fn (int $n): float => (float) $n, $buckets),
+                $nothingOpen ? [null, null, null, null] : $buckets,
             )],
             unit: 'incidents',
             caption: 'The backlog as it stands, whenever each one was filed.',
@@ -318,11 +327,12 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
     public function matrix(PerformanceScope $scope, FigurePeriod $period): TopicMatrix
     {
         $periods = self::run($period, self::PERIODS);
+        $read = $this->readings($scope);
         $seesMoney = $this->seesMoney($scope);
 
         $rows = [];
         foreach ($this->rowsIn($scope) as $entry) {
-            $cells = $this->cellsFor($entry, $scope, $periods);
+            $cells = $this->cellsFor($entry, $scope, $periods, $read);
             if (!$seesMoney) {
                 unset($cells[self::COMPENSATION_CLAIMS]);
             }
@@ -355,7 +365,7 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
      *
      * @return array<string, MatrixCell>
      */
-    private function cellsFor(DepartmentEntry $entry, PerformanceScope $scope, array $periods): array
+    private function cellsFor(DepartmentEntry $entry, PerformanceScope $scope, array $periods, IncidentTopicReadings $read): array
     {
         if (!$entry->canAnswerFor($this->slug)) {
             return self::notMineCells();
@@ -367,13 +377,14 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
         $run = $this->readingsOver(
             new IncidentTopicGround($slice->areaUuid, $entry->runningSince[$this->slug] ?? null),
             $periods,
+            $read,
         );
 
         return [
-            self::FILED => self::cell($run, static fn (array $p): float => (float) $p['filed']->filed()),
-            self::OPEN_PAST_TARGET => self::cell($run, static fn (array $p): float => (float) $p['filed']->openPastTarget($p['period']->until)),
-            self::MEDIAN_DAYS_TO_CLOSE => self::cell($run, static fn (array $p): ?float => $p['resolved']->medianDaysToClose()),
-            self::COMPENSATION_CLAIMS => self::cell($run, static fn (array $p): float => (float) $p['filed']->claimsFiled()),
+            self::FILED => self::cell($run, static fn (array $p): ?float => $p['filed']),
+            self::OPEN_PAST_TARGET => self::cell($run, static fn (array $p): ?float => $p['pastTarget']),
+            self::MEDIAN_DAYS_TO_CLOSE => self::cell($run, static fn (array $p): ?float => $p['median']),
+            self::COMPENSATION_CLAIMS => self::cell($run, static fn (array $p): ?float => $p['claims']),
         ];
     }
 
@@ -415,6 +426,24 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
     }
 
     /**
+     * WHAT THE WORKER FILED FOR EVERY AREA OF THE PAGE'S SCOPE, read once a
+     * period and shared by every figure, row and line of one drawing.
+     */
+    private function readings(PerformanceScope $scope): IncidentTopicReadings
+    {
+        if (null !== $scope->areaUuid) {
+            return new IncidentTopicReadings($this->facts, [$scope->areaUuid]);
+        }
+
+        $areas = [];
+        foreach ($this->entityManager->getRepository(AreaOfInterest::class)->findAll() as $area) {
+            $areas[] = (string) $area->getUuidString();
+        }
+
+        return new IncidentTopicReadings($this->facts, $areas);
+    }
+
+    /**
      * THE GROUND THE PAGE'S OWN FIGURES ARE READ OVER, and since when.
      *
      * The area is the page's — every area on the organization's page, one on
@@ -443,16 +472,17 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
     /**
      * WHAT THE GROUND HELD IN EACH OF A RUN OF PERIODS.
      *
-     * TWO SETS PER PERIOD, because what was FILED in a period and what was
-     * FINISHED in it are different questions, and a page that derived one from
-     * the other could only report the overlap. A period before the module was
-     * running over the ground is not asked at all: it is a hole.
+     * WHAT WAS FILED AND WHAT WAS FINISHED ARE READ APART, because they are
+     * different questions and a page that derived one from the other could
+     * only report the overlap. Every figure is what the worker filed; a period
+     * before the module was running over the ground is not asked at all: it
+     * is a hole.
      *
      * @param list<FigurePeriod> $periods
      *
-     * @return list<array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}>
+     * @return list<array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}>
      */
-    private function readingsOver(IncidentTopicGround $ground, array $periods): array
+    private function readingsOver(IncidentTopicGround $ground, array $periods, IncidentTopicReadings $read): array
     {
         $run = [];
         foreach ($periods as $window) {
@@ -460,48 +490,16 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
 
             $run[] = [
                 'period' => $window,
-                'filed' => $measured
-                    ? $this->readingsOf($this->incidents->findByScopeBetween($ground->areaUuid, $window->from, $window->until))
-                    : PerformanceReadings::none(),
-                'resolved' => $measured
-                    ? $this->readingsOf($this->incidents->findResolvedByScopeBetween($ground->areaUuid, $window->from, $window->until))
-                    : PerformanceReadings::none(),
                 'measured' => $measured,
+                'filed' => $measured ? $read->figure($ground, $window, IncidentFactProvider::AREA_FILED) : null,
+                'resolved' => $measured ? $read->figure($ground, $window, IncidentFactProvider::AREA_RESOLVED) : null,
+                'claims' => $measured ? $read->figure($ground, $window, IncidentFactProvider::AREA_CLAIMS_FILED) : null,
+                'pastTarget' => $measured ? $read->figure($ground, $window, IncidentFactProvider::AREA_OPEN_PAST_TARGET) : null,
+                'median' => $measured ? $read->median($ground, $window) : null,
             ];
         }
 
         return $run;
-    }
-
-    /**
-     * THE ROWS, REDUCED TO WHAT A FIGURE IS MADE OF. Nobody is on a reading:
-     * figures follow scope, not people.
-     *
-     * @param list<Incident> $incidents
-     */
-    private function readingsOf(array $incidents): PerformanceReadings
-    {
-        $readings = [];
-        foreach ($incidents as $incident) {
-            $subcategory = $incident->getSubcategory();
-            // A CLAIM IS FILED BY THE WORDS, NOT BY THE MONEY CARD. A
-            // compensation-bearing sub-category means somebody has asked; the
-            // money row is what the assessment writes afterwards, and a claim
-            // nobody has costed yet is still a claim.
-            $claimed = MoneyDirectionEnum::Compensation === $subcategory->getMoneyDirection();
-            $money = $incident->getMoney();
-
-            $readings[] = new IncidentReading(
-                reportedAt: $incident->getReportedAt(),
-                resolvedAt: $incident->getResolvedAt(),
-                termHours: $subcategory->getTermHours(),
-                open: $incident->getStatus()->isOpen(),
-                claimed: $claimed,
-                claimOutstanding: $claimed && (null === $money || (!$money->isSettled() && !$money->isWaived())),
-            );
-        }
-
-        return new PerformanceReadings($readings);
     }
 
     /**
@@ -530,8 +528,8 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
      * period the module was not running in reads "no figure" on the card and
      * as a hole in the sparkline instead of disagreeing with itself.
      *
-     * @param list<array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}>             $run
-     * @param callable(array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}): ?float $reading
+     * @param list<array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}>             $run
+     * @param callable(array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}): ?float $reading
      */
     private static function figure(
         array $run,
@@ -541,6 +539,7 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
         callable $reading,
         string $caption = '',
         string $unit = '',
+        ?\DateTimeImmutable $asOf = null,
     ): TopicKpi {
         $history = self::series($run, $reading);
 
@@ -553,14 +552,15 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
             history: $history,
             caption: $caption,
             polarity: $polarity,
+            asOf: $asOf,
         );
     }
 
     /**
      * ONE CELL, with its movement and its run.
      *
-     * @param list<array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}>             $run
-     * @param callable(array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}): ?float $reading
+     * @param list<array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}>             $run
+     * @param callable(array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}): ?float $reading
      */
     private static function cell(array $run, callable $reading): MatrixCell
     {
@@ -578,8 +578,8 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
      * installed over the ground is null — nobody was recording, which is not
      * the same fact as recording nothing.
      *
-     * @param list<array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}>             $run
-     * @param callable(array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}): ?float $reading
+     * @param list<array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}>             $run
+     * @param callable(array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}): ?float $reading
      *
      * @return list<float|null>
      */
@@ -598,8 +598,8 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
      * comparison has no figure — "it moved" is a claim, and a claim needs two
      * readings.
      *
-     * @param list<array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}>             $run
-     * @param callable(array{period: FigurePeriod, filed: PerformanceReadings, resolved: PerformanceReadings, measured: bool}): ?float $reading
+     * @param list<array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}>             $run
+     * @param callable(array{period: FigurePeriod, measured: bool, filed: float|null, resolved: float|null, claims: float|null, pastTarget: float|null, median: float|null}): ?float $reading
      */
     private static function delta(array $run, callable $reading): ?float
     {
@@ -635,9 +635,11 @@ final readonly class IncidentPerformanceTopic implements PerformanceTopicProvide
      * term is unreadable, and the term is the sub-category's rather than a
      * setting anybody could name here.
      */
-    private static function targetsCaption(PerformanceReadings $resolved): string
+    /** @param list<int> $termHours the targets the period's finished work was judged against */
+    private static function targetsCaption(array $termHours): string
     {
-        $terms = $resolved->termsInDays();
+        $terms = array_values(array_unique(array_map(static fn (int $hours): float => $hours / 24.0, $termHours)));
+        sort($terms);
         if ([] === $terms) {
             return 'nothing finished in this period';
         }

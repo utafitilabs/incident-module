@@ -35,6 +35,8 @@ use Uhifadhi\Bundle\TeamBundle\Access\Door;
 use Uhifadhi\Contracts\Access\ConcernSourceInterface;
 use Uhifadhi\Contracts\Access\PowerSourceInterface;
 use Uhifadhi\Contracts\Deletion\DeletionContributorInterface;
+use Uhifadhi\Contracts\Facts\FactProviderInterface;
+use Uhifadhi\Contracts\Facts\FactReaderInterface;
 use Uhifadhi\Contracts\Kpi\DepartmentKpiProviderInterface;
 use Uhifadhi\Contracts\Kpi\StationFigureProviderInterface;
 use Uhifadhi\Contracts\Kpi\ZoneFigureProviderInterface;
@@ -58,6 +60,8 @@ use Uhifadhi\Incident\Deletion\IncidentLinksDeletion;
 use Uhifadhi\Incident\Deletion\PersonIncidentDeletion;
 use Uhifadhi\Incident\DependencyInjection\IncidentConfiguration;
 use Uhifadhi\Incident\Devkit\IncidentContentProvider;
+use Uhifadhi\Incident\EventListener\IncidentFactsListener;
+use Uhifadhi\Incident\Facts\IncidentFactProvider;
 use Uhifadhi\Incident\Module\IncidentDepartmentKpiProvider;
 use Uhifadhi\Incident\Module\IncidentModuleProvider;
 use Uhifadhi\Incident\Module\IncidentPerformanceGeo;
@@ -701,11 +705,31 @@ final class UhifadhiIncidentBundle extends AbstractBundle
                 // a boundary to enumerate anybody.
                 service(DepartmentDirectoryInterface::class),
                 service(IncidentRepository::class),
+                service(FactReaderInterface::class),
+                service('doctrine.orm.entity_manager'),
                 service('incident.access.doors'),
                 'incidents',
                 'Incidents',
             ])
             ->tag(PerformanceTopicProviderInterface::TAG);
+
+        /*
+         * THE FIGURES THAT TOPIC READS, filed by the worker per area and per
+         * period on the core's facts ledger. Tagged by hand with the core's
+         * tag, as the facts contract says; the core's schedule asks it
+         * hourly. A change to an incident asks the core to file its months
+         * again, since the schedule refiles open periods only.
+         *
+         * @see vendor/uhifadhi/uhifadhi/src/Uhifadhi/Contracts/Facts/FactProviderInterface.php
+         * @see https://symfony.com/bundles/DoctrineBundle/current/event-listeners.html
+         */
+        $services->set('incident.facts', IncidentFactProvider::class)
+            ->args([service(IncidentRepository::class), service('doctrine.orm.entity_manager')])
+            ->tag(FactProviderInterface::TAG);
+        $services->set('incident.facts_listener', IncidentFactsListener::class)
+            ->args([service('messenger.default_bus')])
+            ->tag('doctrine.event_listener', ['event' => 'onFlush'])
+            ->tag('doctrine.event_listener', ['event' => 'postFlush']);
 
         /*
          * THE GROUND FIGURES THAT GO WITH THAT TOPIC — filings per area, and

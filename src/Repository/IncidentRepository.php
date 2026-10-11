@@ -732,6 +732,33 @@ final class IncidentRepository extends ServiceEntityRepository
     }
 
     /**
+     * THE TARGETS A WINDOW'S FINISHED WORK WAS JUDGED AGAINST, in hours —
+     * the distinct terms of the sub-categories of what was resolved in it,
+     * which the median's caption names. One scalar read.
+     *
+     * @return list<int>
+     */
+    public function findResolvedTermHoursByScopeBetween(?string $areaUuid, \DateTimeImmutable $from, \DateTimeImmutable $until): array
+    {
+        $qb = $this->createQueryBuilder('i')
+            ->select('DISTINCT s.termHours AS hours')
+            ->join('i.subcategory', 's')
+            ->andWhere('i.resolvedAt >= :from')->setParameter('from', $from)
+            ->andWhere('i.resolvedAt < :until')->setParameter('until', $until);
+
+        if (null !== $areaUuid) {
+            $qb->join('i.area', 'sa')
+                ->andWhere('sa.uuid = :scope_area')
+                ->setParameter('scope_area', Uuid::fromString($areaUuid), 'uuid');
+        }
+
+        /** @var list<array{hours: int|string}> $rows */
+        $rows = $qb->getQuery()->getArrayResult();
+
+        return array_map(static fn (array $row): int => (int) $row['hours'], $rows);
+    }
+
+    /**
      * EVERY INCIDENT IN A SCOPE THAT IS STILL OPEN, whenever it was filed —
      * the stock behind "how long an open incident has been open".
      *

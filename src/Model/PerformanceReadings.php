@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace Uhifadhi\Incident\Model;
 
+use Uhifadhi\Incident\Entity\Incident;
+use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
+
 /**
  * THE ARITHMETIC BEHIND THE INCIDENTS TOPIC, over one window's records and
  * nothing else.
@@ -44,6 +47,37 @@ final readonly class PerformanceReadings
     /** @param list<IncidentReading> $readings */
     public function __construct(public array $readings)
     {
+    }
+
+    /**
+     * THE ROWS, REDUCED TO WHAT A FIGURE IS MADE OF. Nobody is on a reading:
+     * figures follow scope, not people.
+     *
+     * @param list<Incident> $incidents
+     */
+    public static function ofIncidents(array $incidents): self
+    {
+        $readings = [];
+        foreach ($incidents as $incident) {
+            $subcategory = $incident->getSubcategory();
+            // A CLAIM IS FILED BY THE WORDS, NOT BY THE MONEY CARD. A
+            // compensation-bearing sub-category means somebody has asked; the
+            // money row is what the assessment writes afterwards, and a claim
+            // nobody has costed yet is still a claim.
+            $claimed = MoneyDirectionEnum::Compensation === $subcategory->getMoneyDirection();
+            $money = $incident->getMoney();
+
+            $readings[] = new IncidentReading(
+                reportedAt: $incident->getReportedAt(),
+                resolvedAt: $incident->getResolvedAt(),
+                termHours: $subcategory->getTermHours(),
+                open: $incident->getStatus()->isOpen(),
+                claimed: $claimed,
+                claimOutstanding: $claimed && (null === $money || (!$money->isSettled() && !$money->isWaived())),
+            );
+        }
+
+        return new self($readings);
     }
 
     public static function none(): self
