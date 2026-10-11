@@ -152,19 +152,15 @@ final class ConfigurePageTest extends FunctionalTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    /**
-     * THE OLD ADDRESS IS KEPT ALIVE. `…/taxonomy` was the screen's address
-     * before the word a person reads became "kinds".
-     */
-    public function testTheOldTaxonomyAddressRedirectsToTheKindsScreen(): void
+    /** A renamed screen has one address: `…/taxonomy` is gone, not redirected. */
+    public function testTheOldTaxonomyAddressIsGone(): void
     {
         $area = $this->anArea();
         $this->client->loginUser($this->aManager());
 
         $this->client->request('GET', \sprintf('/areas/%s/modules/incidents/taxonomy', $this->uuidOf($area)));
 
-        self::assertResponseStatusCodeSame(301);
-        self::assertResponseRedirects(\sprintf('/areas/%s/modules/incidents/kinds', $this->uuidOf($area)));
+        self::assertResponseStatusCodeSame(404);
     }
 
     /** The word "register" is nowhere on the configure page either. */

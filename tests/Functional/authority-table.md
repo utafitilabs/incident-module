@@ -20,7 +20,6 @@ department confined to Kilimani.
 | incident_show | GET /areas/{kilimani}/modules/incidents/INC-0001 | `incidents.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_new | GET /areas/{kilimani}/modules/incidents/new | `incidents.record` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_kinds | GET /areas/{kilimani}/modules/incidents/kinds | `incident-vocabulary.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
-| incident_taxonomy | GET /areas/{kilimani}/modules/incidents/taxonomy | `incident-vocabulary.read` | sign-in | sign-in | refused | → /areas/{kilimani}/modules/incidents/kinds | refused | refused | → /areas/{kilimani}/modules/incidents/kinds | → /areas/{kilimani}/modules/incidents/kinds |
 | incident_lists | GET /areas/{kilimani}/modules/incidents/lists | `incident-vocabulary.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_widgets | GET /areas/{kilimani}/modules/incidents/widgets | `incidents.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_delete | GET /areas/{kilimani}/modules/incidents/INC-0002/delete | `incidents.read` | sign-in | sign-in | refused | refused | refused | refused | refused | allowed |

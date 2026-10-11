@@ -53,11 +53,12 @@ subset of a register another reader sees in full.
 | `case-money.read` | the Money card, the money figures in the record's subline, the money block's answer, money events on the timeline, and every AGGREGATE of them (below) |
 | `case-money.manage` | `incident_money`, `incident_money_waive` |
 
-**There is no `incidents.delete`.** A verb is declared where something
-enforces it, and nothing here destroys an incident: a case is resolved and
-filed, and a correction is a new event rather than an erasure. A declared power
-nothing enforces is a box an administrator can tick that changes nothing. It
-arrives with the first thing that deletes a record.
+**There is no `incidents.delete`, because no position deletes an incident.**
+A case is resolved and filed, and a correction is a new event rather than an
+erasure. What was made by mistake or in tests is deleted by a Super Admin, by
+tier and never by a pair, on the core's one delete page (`incident_delete`,
+reached from the record): the route asks `incidents.read` to open the record at
+all, and the core's delete page refuses everybody who is not a Super Admin.
 
 Every per-area route passes its area — `#[IsGranted('incidents.read', subject:
 'area')]` — because a gate asked without the ground is a gate any placement
