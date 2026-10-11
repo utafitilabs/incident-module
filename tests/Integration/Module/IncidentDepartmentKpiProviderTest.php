@@ -14,7 +14,10 @@ declare(strict_types=1);
 namespace Uhifadhi\Incident\Tests\Integration\Module;
 
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
+use Uhifadhi\Bundle\RegistryBundle\Service\FactRebuildService;
 use Uhifadhi\Bundle\TeamBundle\Entity\Department;
+use Uhifadhi\Contracts\Facts\FactPeriod;
+use Uhifadhi\Contracts\Facts\FactReaderInterface;
 use Uhifadhi\Contracts\Kpi\DepartmentKpi;
 use Uhifadhi\Contracts\Kpi\DepartmentRef;
 use Uhifadhi\Incident\Access\IncidentDoors;
@@ -22,7 +25,6 @@ use Uhifadhi\Incident\Entity\IncidentMoney;
 use Uhifadhi\Incident\Enum\IncidentTransitionEnum;
 use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
 use Uhifadhi\Incident\Module\IncidentDepartmentKpiProvider;
-use Uhifadhi\Incident\Repository\IncidentRepository;
 use Uhifadhi\Incident\Service\IncidentTransitionService;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\FixedGrantVoter;
 use Uhifadhi\Incident\Tests\Integration\IntegrationTestCase;
@@ -39,12 +41,12 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
 {
     private function provider(): IncidentDepartmentKpiProvider
     {
-        /** @var IncidentRepository $incidents */
-        $incidents = static::getContainer()->get(IncidentRepository::class);
         /** @var IncidentDoors $doors */
         $doors = static::getContainer()->get('test_public.incident.access.doors');
+        $facts = $this->service('registry.facts.reader');
+        self::assertInstanceOf(FactReaderInterface::class, $facts);
 
-        return new IncidentDepartmentKpiProvider($incidents, $doors, 'incidents', 'Incidents', 'TZS');
+        return new IncidentDepartmentKpiProvider($facts, $this->em, $doors, 'incidents', 'Incidents', 'TZS');
     }
 
     /**
@@ -77,12 +79,26 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
     /** @return array<string, DepartmentKpi> */
     private function kpisFor(Department $department, \DateTimeImmutable $now, ?AreaOfInterest $area = null): array
     {
+        $this->fileFacts($now);
+
         $byKey = [];
         foreach ($this->provider()->kpisFor(self::ref($department, $area), $now) as $kpi) {
             $byKey[$kpi->key] = $kpi;
         }
 
         return $byKey;
+    }
+
+    /**
+     * THE SPARKLINES' MONTHS, FILED as the worker would have by now: the
+     * plates read the ledger and count nothing themselves.
+     */
+    private function fileFacts(\DateTimeImmutable $now): void
+    {
+        $this->em->flush();
+        $rebuild = $this->service('registry.facts.rebuild');
+        self::assertInstanceOf(FactRebuildService::class, $rebuild);
+        $rebuild->rebuild(FactPeriod::monthsBetween($now->modify('first day of -6 months'), $now), 'incidents');
     }
 
     /** The slug must match the module's, or the host never asks this provider anything. */
@@ -180,6 +196,7 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
         $this->anIncident($area, 'roadkill', 'Zebra roadkill', new \DateTimeImmutable('2026-07-12 09:00:00'));
         $this->em->flush();
 
+        $this->fileFacts($now);
         $protectionKpis = $this->provider()->kpisFor(self::ref($protection, $area), $now);
         $ecologyKpis = $this->provider()->kpisFor(self::ref($ecology, $area), $now);
 
@@ -406,6 +423,7 @@ final class IncidentDepartmentKpiProviderTest extends IntegrationTestCase
         new IncidentMoney($fine, MoneyDirectionEnum::Fine)->setAssessed(450_000);
         $this->em->flush();
 
+        $this->fileFacts($now);
         foreach ([null, $north] as $scope) {
             $kpis = $this->provider()->kpisFor(self::ref($department, $scope), $now);
             $keys = array_map(static fn (DepartmentKpi $kpi): string => $kpi->key, $kpis);

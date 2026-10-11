@@ -17,7 +17,9 @@ use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Contracts\Facts\RecomputeFacts;
 use Uhifadhi\Incident\Entity\Incident;
+use Uhifadhi\Incident\Entity\IncidentMoney;
 use Uhifadhi\Incident\Enum\IncidentStatusEnum;
+use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
 use Uhifadhi\Incident\Tests\Integration\IntegrationTestCase;
 
 /**
@@ -60,6 +62,21 @@ final class IncidentFactsListenerTest extends IntegrationTestCase
         $this->clearQueue();
 
         $this->em->remove($incident);
+        $this->em->flush();
+
+        self::assertSame([['2026-03']], $this->asked());
+    }
+
+    /** The money on an incident is a figure of the month it was reported in. */
+    public function testChangingTheMoneyAsksForTheMonthTheIncidentWasReportedIn(): void
+    {
+        $incident = $this->filed('2026-03-10 09:00:00');
+        $money = new IncidentMoney($incident, MoneyDirectionEnum::Compensation);
+        $this->em->persist($money);
+        $this->em->flush();
+        $this->clearQueue();
+
+        $money->setApproved(180000);
         $this->em->flush();
 
         self::assertSame([['2026-03']], $this->asked());

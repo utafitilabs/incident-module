@@ -20,7 +20,9 @@ use Uhifadhi\Contracts\Facts\FactPeriod;
 use Uhifadhi\Contracts\Facts\FactProviderInterface;
 use Uhifadhi\Contracts\Facts\FactReaderInterface;
 use Uhifadhi\Contracts\Facts\FactSubject;
+use Uhifadhi\Incident\Entity\IncidentMoney;
 use Uhifadhi\Incident\Enum\IncidentStatusEnum;
+use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
 use Uhifadhi\Incident\Facts\IncidentFactProvider;
 use Uhifadhi\Incident\Tests\Integration\IntegrationTestCase;
 
@@ -76,6 +78,12 @@ final class IncidentFactProviderTest extends IntegrationTestCase
             IncidentFactProvider::AREA_OPEN_AGED_14 => [FactSubject::AREA, false],
             IncidentFactProvider::AREA_OPEN_AGED_21 => [FactSubject::AREA, false],
             IncidentFactProvider::AREA_OPEN_AGED_OVER_21 => [FactSubject::AREA, false],
+            IncidentFactProvider::AREA_FILED_RESOLVED => [FactSubject::AREA, true],
+            IncidentFactProvider::AREA_FILED_IN_TERM => [FactSubject::AREA, true],
+            IncidentFactProvider::AREA_FINES => [FactSubject::AREA, true],
+            IncidentFactProvider::AREA_FINE_CASES => [FactSubject::AREA, true],
+            IncidentFactProvider::AREA_COMPENSATION => [FactSubject::AREA, true],
+            IncidentFactProvider::AREA_COMPENSATION_CASES => [FactSubject::AREA, true],
             IncidentFactProvider::INSTALLATION_MEDIAN_DAYS_TO_CLOSE => [FactSubject::INSTALLATION, false],
         ], $declared);
     }
@@ -94,6 +102,35 @@ final class IncidentFactProviderTest extends IntegrationTestCase
         self::assertSame(1.0, $south[IncidentFactProvider::AREA_FILED]->value, 'September’s is September’s');
         self::assertSame(0.0, $south[IncidentFactProvider::AREA_RESOLVED]->value);
         self::assertFalse($south[IncidentFactProvider::AREA_MEDIAN_DAYS_TO_CLOSE]->isKnown(), 'a median of no finished work is no figure');
+    }
+
+    /**
+     * WHAT THE DEPARTMENT PLATES READ, over the incidents reported in the
+     * month: how many of those were resolved and how many inside their own
+     * target, and the money on them in each direction with how many carry it.
+     */
+    public function testTheMonthsResolutionAndMoneyAreFiledPerArea(): void
+    {
+        $claim = $this->anIncident($this->north, at: new \DateTimeImmutable('2026-08-12 09:00:00'));
+        new IncidentMoney($claim, MoneyDirectionEnum::Compensation)->setAssessed(250000);
+        $snare = $this->anIncident($this->north, 'snaring', 'Second snare line', new \DateTimeImmutable('2026-08-14 09:00:00'))
+            ->setStatus(IncidentStatusEnum::Resolved)
+            ->setResolvedAt(new \DateTimeImmutable('2026-08-25 09:00:00'));
+        new IncidentMoney($snare, MoneyDirectionEnum::Fine)->setAssessed(40000);
+        $this->em->flush();
+
+        $this->fileAugust();
+
+        $north = $this->areaFacts($this->north);
+        self::assertSame(2.0, $north[IncidentFactProvider::AREA_FILED_RESOLVED]->value, 'of the four reported, two were resolved');
+        self::assertSame(1.0, $north[IncidentFactProvider::AREA_FILED_IN_TERM]->value, 'one inside its 72 hours, one eleven days late');
+        self::assertSame(40000.0, $north[IncidentFactProvider::AREA_FINES]->value);
+        self::assertSame(1.0, $north[IncidentFactProvider::AREA_FINE_CASES]->value);
+        self::assertSame(250000.0, $north[IncidentFactProvider::AREA_COMPENSATION]->value);
+        self::assertSame(1.0, $north[IncidentFactProvider::AREA_COMPENSATION_CASES]->value);
+
+        $south = $this->areaFacts($this->south);
+        self::assertSame(0.0, $south[IncidentFactProvider::AREA_FINE_CASES]->value, 'nothing carries money: no case, a nought');
     }
 
     /** What is still open is counted at the month's end: past its target, and by how long it has been open. */

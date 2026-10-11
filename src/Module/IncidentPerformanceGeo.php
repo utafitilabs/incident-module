@@ -16,13 +16,16 @@ namespace Uhifadhi\Incident\Module;
 use Uhifadhi\Bundle\AreaBundle\Entity\Zone;
 use Uhifadhi\Bundle\AreaBundle\Repository\AreaOfInterestRepository;
 use Uhifadhi\Bundle\AreaBundle\Repository\ZoneRepository;
+use Uhifadhi\Contracts\Facts\FactReaderInterface;
 use Uhifadhi\Contracts\Kpi\FigurePeriod;
 use Uhifadhi\Contracts\Performance\ColumnPolarity;
 use Uhifadhi\Contracts\Performance\GeoFigure;
 use Uhifadhi\Contracts\Performance\GeoSeries;
 use Uhifadhi\Contracts\Performance\PerformanceGeoProviderInterface;
 use Uhifadhi\Contracts\Performance\PerformanceScope;
-use Uhifadhi\Incident\Entity\Incident;
+use Uhifadhi\Incident\Facts\IncidentFactProvider;
+use Uhifadhi\Incident\Model\IncidentTopicGround;
+use Uhifadhi\Incident\Model\IncidentTopicReadings;
 use Uhifadhi\Incident\Repository\IncidentRepository;
 
 /**
@@ -108,6 +111,7 @@ final readonly class IncidentPerformanceGeo implements PerformanceGeoProviderInt
         private IncidentRepository $incidents,
         private AreaOfInterestRepository $areas,
         private ZoneRepository $zones,
+        private FactReaderInterface $facts,
         /** The slug this module is registered under in the registry's catalogue. */
         private string $slug,
     ) {
@@ -198,22 +202,26 @@ final readonly class IncidentPerformanceGeo implements PerformanceGeoProviderInt
      */
     private function filedByArea(PerformanceScope $scope, FigurePeriod $period): array
     {
-        $tally = [];
-        foreach ($this->incidents->findByScopeBetween($scope->areaUuid, $period->from, $period->until) as $incident) {
-            $uuid = $incident->getArea()->getUuidString();
-            if (null === $uuid) {
-                continue;
-            }
+        $areas = [];
+        foreach (null === $scope->areaUuid ? $this->areas->findAll() : array_filter([$this->areas->findOneByUuid($scope->areaUuid)]) as $area) {
+            $areas[(string) $area->getUuidString()] = $area->getName() ?? 'Unnamed area';
+        }
 
-            $tally[$uuid] ??= ['label' => self::areaName($incident), 'filed' => 0];
-            ++$tally[$uuid]['filed'];
+        // WHAT THE WORKER FILED for each area, in one read.
+        $read = new IncidentTopicReadings($this->facts, array_keys($areas));
+        $tally = [];
+        foreach ($areas as $uuid => $label) {
+            $filed = $read->figure(new IncidentTopicGround($uuid), $period, IncidentFactProvider::AREA_FILED);
+            if (null !== $filed && $filed > 0.0) {
+                $tally[$uuid] = ['label' => $label, 'filed' => $filed];
+            }
         }
 
         uasort($tally, static fn (array $one, array $other): int => $one['label'] <=> $other['label']);
 
         $figures = [];
         foreach ($tally as $uuid => $area) {
-            $figures[] = new GeoFigure($uuid, $area['label'], (float) $area['filed']);
+            $figures[] = new GeoFigure($uuid, $area['label'], $area['filed']);
         }
 
         return $figures;
@@ -276,11 +284,6 @@ final readonly class IncidentPerformanceGeo implements PerformanceGeoProviderInt
      * and the uuid is not, so a nameless area is still a piece of ground with a
      * figure on it rather than a row the plate drops.
      */
-    private static function areaName(Incident $incident): string
-    {
-        return $incident->getArea()->getName() ?? 'Unnamed area';
-    }
-
     /** The same promise for a zone. */
     private static function zoneName(Zone $zone): string
     {

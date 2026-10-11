@@ -681,7 +681,8 @@ final class UhifadhiIncidentBundle extends AbstractBundle
 
         $services->set('incident.department_kpi_provider', IncidentDepartmentKpiProvider::class)
             ->args([
-                service(IncidentRepository::class),
+                service(FactReaderInterface::class),
+                service('doctrine.orm.entity_manager'),
                 service('incident.access.doors'),
                 'incidents',
                 'Incidents',
@@ -746,6 +747,7 @@ final class UhifadhiIncidentBundle extends AbstractBundle
                 // by identifier and carries no geometry across the seam.
                 service(AreaOfInterestRepository::class),
                 service(ZoneRepository::class),
+                service(FactReaderInterface::class),
                 'incidents',
             ])
             ->tag(PerformanceGeoProviderInterface::TAG);

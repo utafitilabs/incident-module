@@ -34,7 +34,10 @@ there with nothing behind it.
 loads every incident of every period it draws. The worker files each area's
 figures a period on the core's facts ledger (`IncidentFactProvider`, module
 `incidents`) and the topic reads them; a change to an incident asks the worker
-to file its months again. Requires `uhifadhi/uhifadhi` `^0.2.1`.
+to file its months again. The department plates on the dashboard and a
+department's record — counts, the share resolved within term, fines and
+compensation — and the Performance map's filings by area read the same rows.
+Requires `uhifadhi/uhifadhi` `^0.2.1`.
 
 **What to do.** The open month, quarter and year are filed by the core's hourly
 schedule, so the worker must be running. Months that closed before the upgrade

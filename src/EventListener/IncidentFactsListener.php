@@ -19,6 +19,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Uhifadhi\Contracts\Facts\FactPeriod;
 use Uhifadhi\Contracts\Facts\RecomputeFacts;
 use Uhifadhi\Incident\Entity\Incident;
+use Uhifadhi\Incident\Entity\IncidentMoney;
 use Uhifadhi\Incident\Facts\IncidentFactProvider;
 
 /**
@@ -26,7 +27,7 @@ use Uhifadhi\Incident\Facts\IncidentFactProvider;
  *
  * The core's schedule refiles only the periods still open, and a closed month
  * keeps what it last filed. An incident filed late, resolved, reopened,
- * re-filed under another sub-category or area, or deleted changes the figures
+ * re-filed under another sub-category or area, given money, or deleted changes the figures
  * of the month it was reported in and of the month it was resolved in, so the
  * flush that wrote the change asks for both — {@see RecomputeFacts}, which the
  * worker answers.
@@ -57,6 +58,16 @@ final class IncidentFactsListener
         foreach ([...$work->getScheduledEntityInsertions(), ...$work->getScheduledEntityDeletions()] as $entity) {
             if ($entity instanceof Incident) {
                 $this->ask($entity->getReportedAt(), $entity->getResolvedAt());
+            }
+            if ($entity instanceof IncidentMoney) {
+                $this->ask($entity->getIncident()->getReportedAt());
+            }
+        }
+
+        // THE MONEY ON AN INCIDENT is a figure of the month it was reported in.
+        foreach ($work->getScheduledEntityUpdates() as $entity) {
+            if ($entity instanceof IncidentMoney) {
+                $this->ask($entity->getIncident()->getReportedAt());
             }
         }
 

@@ -13,15 +13,21 @@ declare(strict_types=1);
 
 namespace Uhifadhi\Incident\Module;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Contracts\Access\Verb;
+use Uhifadhi\Contracts\Facts\FactReaderInterface;
 use Uhifadhi\Contracts\Kpi\DepartmentKpi;
 use Uhifadhi\Contracts\Kpi\DepartmentKpiProviderInterface;
 use Uhifadhi\Contracts\Kpi\DepartmentRef;
+use Uhifadhi\Contracts\Kpi\FigurePeriod;
 use Uhifadhi\Incident\Access\IncidentConcerns;
 use Uhifadhi\Incident\Access\IncidentDoors;
-use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
-use Uhifadhi\Incident\Repository\IncidentRepository;
+use Uhifadhi\Incident\Facts\IncidentFactProvider;
+use Uhifadhi\Incident\Model\IncidentPlates;
+use Uhifadhi\Incident\Model\IncidentTopicGround;
+use Uhifadhi\Incident\Model\IncidentTopicReadings;
 
 /**
  * THE INCIDENTS FIGURES A DEPARTMENT'S PERFORMANCE PAGE PRINTS, this month.
@@ -57,6 +63,11 @@ use Uhifadhi\Incident\Repository\IncidentRepository;
  * money gets a dashed slot for the money plates, not a zero: "they
  * assessed nothing" and "nothing they touched could carry a fine" are different
  * facts, and only one of them is about performance.
+ *
+ * EVERY FIGURE IS WHAT THE WORKER FILED on the facts ledger, per area and per
+ * month ({@see IncidentFactProvider}), so the dashboard and a department's
+ * record ask a fixed number of questions however many incidents were filed. A
+ * month the worker has not filed yet is no figure.
  */
 final class IncidentDepartmentKpiProvider implements DepartmentKpiProviderInterface
 {
@@ -64,7 +75,8 @@ final class IncidentDepartmentKpiProvider implements DepartmentKpiProviderInterf
     private const int SPARK_MONTHS = 6;
 
     public function __construct(
-        private readonly IncidentRepository $incidents,
+        private readonly FactReaderInterface $facts,
+        private readonly EntityManagerInterface $entityManager,
         /**
          * WHETHER THE TWO MONEY PLATES MAY BE DRAWN FOR THIS READER, over the
          * scope the ref names — one area, or every area of an
@@ -95,18 +107,28 @@ final class IncidentDepartmentKpiProvider implements DepartmentKpiProviderInterf
     public function kpisFor(DepartmentRef $department, \DateTimeImmutable $now): array
     {
         $monthStart = $now->modify('first day of this month')->setTime(0, 0);
-        $nextMonth = $monthStart->modify('+1 month');
-        $previousStart = $monthStart->modify('-1 month');
+        $thisMonth = FigurePeriod::month($monthStart);
+        $lastMonth = FigurePeriod::month($monthStart->modify('-1 month'));
 
-        $month = $this->incidents->findByScopeBetween($department->areaUuid, $monthStart, $nextMonth);
-        $previous = $this->incidents->findByScopeBetween($department->areaUuid, $previousStart, $monthStart);
+        $ground = new IncidentTopicGround($department->areaUuid);
+        $read = $this->readings($department->areaUuid);
+        $months = [];
+        for ($back = self::SPARK_MONTHS - 1; $back >= 0; --$back) {
+            $months[] = FigurePeriod::month($monthStart->modify(\sprintf('-%d months', $back)));
+        }
+
+        $filed = $read->figure($ground, $thisMonth, IncidentFactProvider::AREA_FILED);
+        $wasFiled = $read->figure($ground, $lastMonth, IncidentFactProvider::AREA_FILED);
 
         // Nothing recorded in scope in either month: report
         // NOTHING rather than a row of zeros. The host draws a dashed labelled
         // slot, which is the truthful rendering of "we have no reading".
-        if ([] === $month && [] === $previous) {
+        if (!($filed > 0.0) && !($wasFiled > 0.0)) {
             return [];
         }
+
+        $asOf = $read->asOf($ground, $thisMonth);
+        $plates = new IncidentPlates($read, $ground, $thisMonth, $lastMonth, $months, $asOf);
 
         $caption = \sprintf(
             '%s module · %s',
@@ -114,48 +136,14 @@ final class IncidentDepartmentKpiProvider implements DepartmentKpiProviderInterf
             null === $department->areaUuid ? 'incidents recorded across the organization' : 'incidents recorded in this area',
         );
         $kpis = [
-            new DepartmentKpi(
-                'incidents',
-                'Incidents recorded',
-                $this->slug,
-                $this->name,
-                (float) \count($month),
-                '',
-                (float) \count($previous),
-                $this->spark($department->areaUuid, $monthStart, static fn (array $rows): float => (float) \count($rows)),
-                $caption,
-            ),
-            new DepartmentKpi(
-                'incidents_resolved',
-                'Incidents resolved',
-                $this->slug,
-                $this->name,
-                (float) self::resolvedCount($month),
-                '',
-                (float) self::resolvedCount($previous),
-                $this->spark($department->areaUuid, $monthStart, static fn (array $rows): float => (float) self::resolvedCount($rows)),
-                $caption,
-            ),
-            new DepartmentKpi(
-                'incidents_in_term',
-                'Resolved within term',
-                $this->slug,
-                $this->name,
-                self::withinTermShare($month),
-                DepartmentKpi::SHARE,
-                self::withinTermShare($previous),
-                $this->spark($department->areaUuid, $monthStart, static fn (array $rows): ?float => self::withinTermShare($rows)),
-                // Its own provenance line: the term is the CATEGORY's, not a
-                // global setting, and a share printed without saying what it was
-                // measured against is unreadable.
-                $caption.' · against each category’s own term',
-            ),
+            $this->plate($plates, 'incidents', 'Incidents recorded', '', $caption, self::figure(IncidentFactProvider::AREA_FILED)),
+            $this->plate($plates, 'incidents_resolved', 'Incidents resolved', '', $caption, self::figure(IncidentFactProvider::AREA_FILED_RESOLVED)),
+            // Its own provenance line: the term is the CATEGORY's, not a
+            // global setting, and a share printed without saying what it was
+            // measured against is unreadable.
+            $this->plate($plates, 'incidents_in_term', 'Resolved within term', DepartmentKpi::SHARE, $caption.' · against each category’s own term', self::withinTermShare(...)),
         ];
 
-        // A list of pairs, not a map: an enum case cannot be an array key, and
-        // the two directions must stay two plates — the design refuses to add a
-        // fine and a claim together anywhere, and a performance page is not an
-        // exception.
         /*
          * THE MONEY IS A CONCERN OF ITS OWN, so somebody who reads this
          * department's work and not its money gets the three plates above and
@@ -168,115 +156,108 @@ final class IncidentDepartmentKpiProvider implements DepartmentKpiProviderInterf
             return $kpis;
         }
 
+        // The two directions stay two plates — the design refuses to add a
+        // fine and a claim together anywhere, and a performance page is not
+        // an exception.
         foreach ([
-            [MoneyDirectionEnum::Fine, 'Fines assessed'],
-            [MoneyDirectionEnum::Compensation, 'Compensation approved'],
-        ] as [$direction, $label]) {
-            $value = self::money($month, $direction);
-            $was = self::money($previous, $direction);
+            [MoneyDirectionEnum::Fine, 'Fines assessed', IncidentFactProvider::AREA_FINES, IncidentFactProvider::AREA_FINE_CASES],
+            [MoneyDirectionEnum::Compensation, 'Compensation approved', IncidentFactProvider::AREA_COMPENSATION, IncidentFactProvider::AREA_COMPENSATION_CASES],
+        ] as [$direction, $label, $total, $cases]) {
+            $money = self::money($total, $cases);
             // Absent entirely rather than dashed, when nothing in scope carries
             // money of this kind: a plate for a fact that does not apply
             // is clutter, and the host's dashed slot means "we could not measure",
             // not "this is not our work".
-            if (null === $value && null === $was) {
+            if (null === $money($read, $ground, $thisMonth) && null === $money($read, $ground, $lastMonth)) {
                 continue;
             }
 
-            $kpis[] = new DepartmentKpi(
-                'incidents_'.$direction->value,
-                $label,
-                $this->slug,
-                $this->name,
-                null === $value ? null : (float) $value,
-                $this->currency,
-                null === $was ? null : (float) $was,
-                $this->spark($department->areaUuid, $monthStart, static fn (array $rows): ?float => null === ($m = self::money($rows, $direction)) ? null : (float) $m),
-                $caption,
-            );
+            $kpis[] = $this->plate($plates, 'incidents_'.$direction->value, $label, $this->currency, $caption, $money);
         }
 
         return $kpis;
     }
 
     /**
-     * The last {@see SPARK_MONTHS} months of one figure, oldest first. A month
-     * the scope could not be measured in contributes nothing rather than a
-     * zero, so a sparkline never dips to the floor because a reading is missing.
+     * One plate: the month's figure, last month's beside it, and the run of
+     * months for its sparkline.
      *
-     * @param callable(list<Incident>): ?float $reading
-     *
-     * @return list<float>
+     * @param \Closure(IncidentTopicReadings, IncidentTopicGround, FigurePeriod): ?float $reading
      */
-    private function spark(?string $areaUuid, \DateTimeImmutable $monthStart, callable $reading): array
+    private function plate(IncidentPlates $plates, string $key, string $label, string $unit, string $caption, \Closure $reading): DepartmentKpi
     {
-        $series = [];
-        for ($back = self::SPARK_MONTHS - 1; $back >= 0; --$back) {
-            $from = $monthStart->modify(\sprintf('-%d months', $back));
-            $value = $reading($this->incidents->findByScopeBetween($areaUuid, $from, $from->modify('+1 month')));
+        $values = [];
+        foreach ($plates->months as $month) {
+            // A month the scope could not be measured in contributes nothing
+            // rather than a zero, so a sparkline never dips to the floor
+            // because a reading is missing.
+            $value = $reading($plates->read, $plates->ground, $month);
             if (null !== $value) {
-                $series[] = $value;
+                $values[] = $value;
             }
         }
 
-        return $series;
+        return new DepartmentKpi(
+            $key,
+            $label,
+            $this->slug,
+            $this->name,
+            $reading($plates->read, $plates->ground, $plates->thisMonth),
+            $unit,
+            $reading($plates->read, $plates->ground, $plates->lastMonth),
+            $values,
+            $caption,
+            asOf: $plates->asOf,
+        );
     }
 
-    /** @param list<Incident> $incidents */
-    private static function resolvedCount(array $incidents): int
+    /** @return \Closure(IncidentTopicReadings, IncidentTopicGround, FigurePeriod): ?float */
+    private static function figure(string $key): \Closure
     {
-        $resolved = 0;
-        foreach ($incidents as $incident) {
-            if (null !== $incident->getResolvedAt()) {
-                ++$resolved;
-            }
-        }
-
-        return $resolved;
+        return static fn (IncidentTopicReadings $read, IncidentTopicGround $ground, FigurePeriod $month): ?float => $read->figure($ground, $month, $key);
     }
 
     /**
-     * The share of this month's RESOLVED work that finished inside its own
+     * The share of the month's RESOLVED work that finished inside its own
      * category's term. Null while nothing has been resolved — a month with no
      * finished work has no compliance rate, and printing 0% would read as total
      * failure rather than as no data.
-     *
-     * @param list<Incident> $incidents
      */
-    private static function withinTermShare(array $incidents): ?float
+    private static function withinTermShare(IncidentTopicReadings $read, IncidentTopicGround $ground, FigurePeriod $month): ?float
     {
-        $resolved = 0;
-        $inTerm = 0;
-        foreach ($incidents as $incident) {
-            $resolvedAt = $incident->getResolvedAt();
-            if (null === $resolvedAt) {
-                continue;
-            }
-            ++$resolved;
-            if (!$incident->isPastTerm($resolvedAt)) {
-                ++$inTerm;
-            }
-        }
+        $resolved = $read->figure($ground, $month, IncidentFactProvider::AREA_FILED_RESOLVED);
+        $inTerm = $read->figure($ground, $month, IncidentFactProvider::AREA_FILED_IN_TERM);
 
-        return 0 === $resolved ? null : $inTerm / $resolved * 100.0;
+        return null === $resolved || null === $inTerm || 0.0 === $resolved ? null : $inTerm / $resolved * 100.0;
     }
 
     /**
      * The money on the record in one direction, or NULL where nothing in scope
      * carries it.
      *
-     * @param list<Incident> $incidents
+     * @return \Closure(IncidentTopicReadings, IncidentTopicGround, FigurePeriod): ?float
      */
-    private static function money(array $incidents, MoneyDirectionEnum $direction): ?int
+    private static function money(string $total, string $cases): \Closure
     {
-        $total = null;
-        foreach ($incidents as $incident) {
-            $money = $incident->getMoney();
-            if (null === $money || $money->getDirection() !== $direction) {
-                continue;
-            }
-            $total = ($total ?? 0) + $money->payable();
+        return static function (IncidentTopicReadings $read, IncidentTopicGround $ground, FigurePeriod $month) use ($total, $cases): ?float {
+            $carrying = $read->figure($ground, $month, $cases);
+
+            return null === $carrying || 0.0 === $carrying ? null : $read->figure($ground, $month, $total);
+        };
+    }
+
+    /** What the worker filed for the ref's area, or for every area. */
+    private function readings(?string $areaUuid): IncidentTopicReadings
+    {
+        if (null !== $areaUuid) {
+            return new IncidentTopicReadings($this->facts, [$areaUuid]);
         }
 
-        return $total;
+        $areas = [];
+        foreach ($this->entityManager->getRepository(AreaOfInterest::class)->findAll() as $area) {
+            $areas[] = (string) $area->getUuidString();
+        }
+
+        return new IncidentTopicReadings($this->facts, $areas);
     }
 }

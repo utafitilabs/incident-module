@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace Uhifadhi\Incident\Tests\Integration\Module;
 
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
+use Uhifadhi\Bundle\RegistryBundle\Service\FactRebuildService;
+use Uhifadhi\Contracts\Facts\FactPeriod;
 use Uhifadhi\Contracts\Kpi\FigurePeriod;
 use Uhifadhi\Contracts\Performance\GeoFigure;
 use Uhifadhi\Contracts\Performance\GeoSeries;
@@ -40,6 +42,12 @@ final class IncidentPerformanceGeoTest extends IntegrationTestCase
     /** The wired provider, so the tag and the arguments are under test too. */
     private function geo(): IncidentPerformanceGeo
     {
+        // THE MONTHS A PLATE READS, FILED as the worker would have by now.
+        $this->em->flush();
+        $rebuild = $this->service('registry.facts.rebuild');
+        self::assertInstanceOf(FactRebuildService::class, $rebuild);
+        $rebuild->rebuild(FactPeriod::monthsBetween(new \DateTimeImmutable('2026-06-01'), new \DateTimeImmutable('2026-09-01')), 'incidents');
+
         /** @var IncidentPerformanceGeo $provider */
         $provider = $this->service('incident.performance_geo');
 
