@@ -29,7 +29,8 @@ use Uhifadhi\Incident\Module\IncidentModuleProvider;
 use Uhifadhi\Incident\Service\IncidentOrgService;
 
 /**
- * INCIDENTS AT ORGANIZATION SCOPE — three screens, read across every area.
+ * INCIDENTS AT ORGANIZATION SCOPE — the register and the incident kinds,
+ * read across every area. The module lands on the register.
  *
  * THE SHELL DRAWS THE CHROME. The row in Observatory, the tab strip and the
  * scope control are the shell's, mounted from what this module's provider
@@ -53,7 +54,6 @@ use Uhifadhi\Incident\Service\IncidentOrgService;
 #[Route(defaults: [RegistryBundle::MODULE_ROUTE_DEFAULT => IncidentModuleProvider::SLUG])]
 final readonly class IncidentOrgController
 {
-    public const string OVERVIEW_ROUTE = 'incident_org_dashboard';
     public const string LIST_ROUTE = 'incident_org_list';
     public const string KINDS_ROUTE = 'incident_org_kinds';
 
@@ -65,20 +65,7 @@ final readonly class IncidentOrgController
     ) {
     }
 
-    #[Route('/incidents', name: self::OVERVIEW_ROUTE, methods: ['GET'])]
-    #[IsGranted('areas.read')]
-    public function overview(): Response
-    {
-        [$scope, $areas, $now] = $this->reading();
-
-        return new Response($this->twig->render('@UhifadhiIncident/org/overview.html.twig', [
-            'scope' => $scope,
-            'now' => $now,
-            'summary' => $this->org->summary($areas, $now),
-        ]));
-    }
-
-    #[Route('/incidents/list', name: self::LIST_ROUTE, methods: ['GET'])]
+    #[Route('/incidents', name: self::LIST_ROUTE, methods: ['GET'])]
     #[IsGranted('areas.read')]
     public function list(Request $request): Response
     {
@@ -133,7 +120,7 @@ final readonly class IncidentOrgController
     }
 
     /**
-     * WHAT EVERY ONE OF THE THREE READS — one scope, its areas, one instant.
+     * WHAT BOTH SCREENS READ — one scope, its areas, one instant.
      *
      * @return array{0: Scope, 1: list<IncidentOrgArea>, 2: \DateTimeImmutable}
      */

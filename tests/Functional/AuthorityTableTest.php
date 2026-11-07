@@ -184,7 +184,6 @@ final class AuthorityTableTest extends AuthorityTableTestCase
             Probe::get('incident_kinds', $area),
             Probe::get('incident_lists', $area),
             Probe::get('incident_widgets', $area),
-            Probe::get('incident_org_dashboard'),
             Probe::get('incident_org_list'),
             Probe::get('incident_org_kinds'),
             Probe::get('incident_delete', $area + ['reference' => self::SECOND]),

@@ -21,9 +21,6 @@ use Uhifadhi\Contracts\Access\Grant;
 use Uhifadhi\Contracts\Access\Verb;
 use Uhifadhi\Contracts\Shell\Scope;
 use Uhifadhi\Incident\Access\IncidentConcerns;
-use Uhifadhi\Incident\Entity\Incident;
-use Uhifadhi\Incident\Enum\IncidentSeverityEnum;
-use Uhifadhi\Incident\Enum\IncidentStatusEnum;
 use Uhifadhi\Incident\Model\IncidentFilter;
 use Uhifadhi\Incident\Model\IncidentOrgArea;
 use Uhifadhi\Incident\Model\IncidentOrgKind;
@@ -32,7 +29,6 @@ use Uhifadhi\Incident\Model\IncidentOrgKinds;
 use Uhifadhi\Incident\Model\IncidentOrgQuery;
 use Uhifadhi\Incident\Model\IncidentOrgRegister;
 use Uhifadhi\Incident\Model\IncidentOrgRow;
-use Uhifadhi\Incident\Model\IncidentOrgSummary;
 use Uhifadhi\Incident\Module\IncidentModuleProvider;
 use Uhifadhi\Incident\Repository\IncidentRepository;
 use Uhifadhi\Incident\Repository\TaxonomyKindRepository;
@@ -42,9 +38,8 @@ use Uhifadhi\Incident\Repository\TaxonomyKindRepository;
  *
  * EVERY FIGURE IS THE AREA READING WITH THE AREA FILTER WIDENED. This class
  * counts nothing of its own: it resolves which areas a scope reaches and asks
- * each of them what the area's own pages ask — the overview figures, the
- * register's one filtered query, the kinds page's figures — and folds what
- * comes back. A second aggregate written for this scope would be two numbers
+ * each of them what the area's own pages ask — the register's one filtered
+ * query, the kinds page's figures — and folds what comes back. A second aggregate written for this scope would be two numbers
  * for one question.
  *
  * ONLY AREAS THAT RUN THE MODULE, AND ONLY AREAS THE READER MAY READ IT IN.
@@ -63,7 +58,6 @@ final class IncidentOrgService
         private readonly AreaModuleService $areaModules,
         private readonly IncidentRepository $incidents,
         private readonly TaxonomyKindRepository $kinds,
-        private readonly IncidentOverviewFigures $overview,
         private readonly IncidentKindsOverviewService $kindsOverview,
         private readonly ?AuthorizationCheckerInterface $authorization = null,
     ) {
@@ -105,44 +99,6 @@ final class IncidentOrgService
         }
 
         return $reached;
-    }
-
-    /**
-     * THE OVERVIEW'S STRIP, from each area's own overview figures.
-     *
-     * @param list<IncidentOrgArea> $areas
-     */
-    public function summary(array $areas, \DateTimeImmutable $now): IncidentOrgSummary
-    {
-        $month = $now->setTime(0, 0)->modify('first day of this month');
-        $reporting = $filed = $inProgress = $inProgressAreas = 0;
-        $critical = [];
-        $pastTerm = [];
-
-        foreach ($areas as $one) {
-            $overview = $this->overview->for($one->area, $now);
-            $month = $overview->month;
-            $filed += $overview->filedThisMonth;
-            $reporting += $overview->filedThisMonth > 0 ? 1 : 0;
-
-            $working = $overview->count(IncidentStatusEnum::InProgress);
-            $inProgress += $working;
-            $inProgressAreas += $working > 0 ? 1 : 0;
-
-            $open = \count(array_filter(
-                $this->incidents->openFor($one->area),
-                static fn (Incident $incident): bool => IncidentSeverityEnum::Critical === $incident->getSeverity(),
-            ));
-            if ($open > 0) {
-                $critical[$one->name()] = $open;
-            }
-
-            foreach ($overview->pastTerm as $incident) {
-                $pastTerm[] = new IncidentOrgRow($one, $incident);
-            }
-        }
-
-        return new IncidentOrgSummary(\count($areas), $reporting, $month, $filed, $inProgress, $inProgressAreas, $critical, $pastTerm);
     }
 
     /**

@@ -400,7 +400,6 @@ return static function (ContainerConfigurator $container): void {
             service('registry.area_modules'),
             service(IncidentRepository::class),
             service(TaxonomyKindRepository::class),
-            service('incident.overview.figures'),
             service('incident.kinds_overview'),
             service('security.authorization_checker')->nullOnInvalid(),
         ]);

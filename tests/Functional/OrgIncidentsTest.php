@@ -18,13 +18,13 @@ use Symfony\Component\Routing\RouterInterface;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Contracts\Shell\OrgPage;
 use Uhifadhi\Incident\Controller\IncidentOrgController;
-use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Enum\IncidentSeverityEnum;
 use Uhifadhi\Incident\Module\IncidentModuleProvider;
 
 /**
- * INCIDENTS AT ORGANIZATION SCOPE — three screens, read across every area
- * the module is switched on in.
+ * INCIDENTS AT ORGANIZATION SCOPE — two screens, read across every area
+ * the module is switched on in: the register, which is where the module
+ * lands, and the incident kinds.
  *
  * WHAT IS ASSERTED IS THE WIDENING. Every figure on these pages has to be the
  * area reading with the area filter widened, so the tests that matter compare
@@ -74,65 +74,45 @@ final class OrgIncidentsTest extends FunctionalTestCase
         return $router->generate($route, $parameters);
     }
 
-    /** THE STRIP IS THREE, and the three the provider names. */
-    public function testTheStripIsTheThreeScreensTheModuleContributes(): void
+    /** THE STRIP IS TWO, and the two the provider names. */
+    public function testTheStripIsTheTwoScreensTheModuleContributes(): void
     {
-        $tabs = $this->open(IncidentOrgController::OVERVIEW_ROUTE)->filter('.atabs a');
+        $page = $this->open(IncidentOrgController::LIST_ROUTE);
+        $tabs = $page->filter('.atabs a');
 
-        self::assertSame(['Overview', 'Incidents', 'Incident kinds'], $tabs->each(static fn (Crawler $tab): string => trim($tab->text())));
+        self::assertSame(['Incidents', 'Incident kinds'], $tabs->each(static fn (Crawler $tab): string => trim($tab->text())));
+        self::assertSame('Incidents', trim($page->filter('.atabs a.on')->text()));
         self::assertSame(
-            ['overview', 'incidents', 'kinds'],
+            ['incidents', 'kinds'],
             array_map(static fn (OrgPage $page): string => $page->key, new IncidentModuleProvider('operations')->orgPages()),
             'And the strip is built from the same declaration the shell mounts.',
         );
     }
 
     /** THE SIDEBAR ROW IS THE SHELL'S, mounted from the same declaration. */
-    public function testTheSidebarCarriesTheThreeScreens(): void
+    public function testTheSidebarCarriesTheTwoScreens(): void
     {
         $crawler = $this->open(IncidentOrgController::LIST_ROUTE);
 
-        foreach ([IncidentOrgController::OVERVIEW_ROUTE, IncidentOrgController::LIST_ROUTE, IncidentOrgController::KINDS_ROUTE] as $route) {
+        foreach ([IncidentOrgController::LIST_ROUTE, IncidentOrgController::KINDS_ROUTE] as $route) {
             self::assertGreaterThanOrEqual(2, $crawler->filter(\sprintf('a[href="%s"]', $this->url($route)))->count(), $route.' is a tab and a sidebar row.');
         }
     }
 
-    /** THE OVERVIEW'S STRIP IS THE AREAS' OWN FIGURES, ADDED. */
-    public function testTheOverviewStripIsTheAreasAdded(): void
+    /** THE MODULE LANDS ON THE REGISTER: the bar above it, the foot below, no strip of facts. */
+    public function testTheModuleLandsOnTheRegister(): void
     {
-        $org = $this->open(IncidentOrgController::OVERVIEW_ROUTE);
+        self::assertSame('/incidents', $this->url(IncidentOrgController::LIST_ROUTE));
 
-        self::assertCount(1, $org->filter('.factband'));
-        self::assertSame('2', self::fact($org, 'areas'), 'Only the areas the module is switched on in.');
-        self::assertSame('3', self::fact($org, 'filed'));
-        self::assertSame('1', self::fact($org, 'critical'));
-        self::assertStringContainsString('North Range 1', $org->filter('[data-fact="critical"] em')->text());
+        $this->client->loginUser($this->aManager());
+        $page = $this->client->request('GET', '/incidents');
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $page->filter('.c form.lfilt'));
+        self::assertCount(1, $page->filter('.c table.tbl + .rdf-foot'));
+        self::assertCount(0, $page->filter('.factband'));
 
-        $summed = 0;
-        foreach ([$this->north, $this->south] as $area) {
-            $summed += (int) self::fact($this->open(IncidentOrgController::OVERVIEW_ROUTE, ['area' => $this->uuidOf($area)]), 'filed');
-        }
-        self::assertSame(3, $summed, 'The organization figure is the areas added, so it cannot drift from them.');
-    }
-
-    private static function fact(Crawler $page, string $key): string
-    {
-        return trim($page->filter(\sprintf('.factband [data-fact="%s"] .v', $key))->getNode(0)?->firstChild->textContent ?? '');
-    }
-
-    /** WHAT NEEDS SOMEBODY IS THE BANNER, and only when something waits. */
-    public function testWorkPastItsTermIsTheOverviewsBanner(): void
-    {
-        self::assertCount(0, $this->open(IncidentOrgController::OVERVIEW_ROUTE)->filter('.banner'), 'Nothing is late, so nothing is raised.');
-
-        $this->em->createQuery(\sprintf('UPDATE %s i SET i.reportedAt = :then', Incident::class))
-            ->setParameter('then', new \DateTimeImmutable('-60 days'))
-            ->execute();
-
-        $banner = $this->open(IncidentOrgController::OVERVIEW_ROUTE)->filter('.banner');
-        self::assertCount(1, $banner);
-        self::assertMatchesRegularExpression('/^3 open past (its|their) term, in 2 areas$/', trim($banner->filter('.banner-t > b')->text()));
-        self::assertSame($this->url(IncidentOrgController::LIST_ROUTE), $banner->filter('.banner-acts a.btn')->attr('href'));
+        $this->client->request('GET', '/incidents/list');
+        self::assertResponseStatusCodeSame(404, 'The register answers at the module\'s own address and nowhere else.');
     }
 
     /** THE REGISTER IS THE AREA'S, ONE COLUMN WIDER, newest first across every area. */

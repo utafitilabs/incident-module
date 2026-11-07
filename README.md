@@ -66,12 +66,11 @@ A module is installed but **parked**: every page of it answers 404 in an area th
 
 ### The organization pages
 
-Beside every area's own pages, the module answers once across all of them: the shell mounts its three organization screens as the *Incidents* row under Observatory and draws their tab strip and scope control. Each is the area page with the area filter widened, read over the areas that run the module and whose register the reader may open; gated on `areas.read`, like the other organization readings.
+Beside every area's own pages, the module answers once across all of them: the shell mounts its two organization screens as the *Incidents* row, which opens the register, under Observatory and draws their tab strip and scope control. Each is the area page with the area filter widened, read over the areas that run the module and whose register the reader may open; gated on `areas.read`, like the other organization readings.
 
 | Route | Path | What it is |
 |---|---|---|
-| `incident_org_dashboard` | `/incidents` | Overview: the strip across every area, and open work past its term as the banner |
-| `incident_org_list` | `/incidents/list` | Incidents: every area's register in one table, the area as a column |
+| `incident_org_list` | `/incidents` | Incidents: every area's register in one table, the area as a column |
 | `incident_org_kinds` | `/incidents/kinds` | Incident kinds: one taxonomy, and which area files against each word |
 
 The addresses are the installation's: they arrive with the module's controller routes, so an installation that imports `@UhifadhiIncidentBundle/src/Controller/` has them and adds no `controllers.json` entry for them.

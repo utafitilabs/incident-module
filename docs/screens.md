@@ -33,19 +33,19 @@ answers (`/widgets/save`, `/widgets/reset`, `/widgets/preset/{id}`, …).
 
 ## The organization pages
 
-The same three tabs one scope wider, at the root rather than under an area:
+The area module's register and its kinds one scope wider, at the root rather
+than under an area; the module lands on the register:
 
 | Route | Path | What it is |
 |---|---|---|
-| `incident_org_dashboard` | `/incidents` | Overview: the strip — areas running the module and how many filed this month, filed this month, in progress and across how many areas, critical open by area — and open work past its own term as the shell's banner, with a door to the register. |
-| `incident_org_list` | `/incidents/list` | Incidents: every area's filtered register in one `table.tbl`, newest first, the area as a column by its place in the declared order. The bar is the house `.lfilt` — area, category, status, month, department and the search — every option a link; the area chip writes the shell's own `?area=`. The counts are under the month and the search, over every area the reader may open. The shell's foot pages it. Open goes to the area's case file. |
+| `incident_org_list` | `/incidents` | Incidents: every area's filtered register in one `table.tbl`, newest first, the area as a column by its place in the declared order. The bar is the house `.lfilt` — area, category, status, month, department and the search — every option a link; the area chip writes the shell's own `?area=`. The counts are under the month and the search, over every area the reader may open. The shell's foot pages it. Open goes to the area's case file. |
 | `incident_org_kinds` | `/incidents/kinds` | Incident kinds: the wire-codes the areas share down the left (`?kind=`), and for the chosen word each area's this month, last month, all time and sub-categories, with a door to that area's kinds editor. Read-only. The bar narrows the areas by use (`?use=active` or `retired`) and by name (`?q=`), and the foot pages them. A word retired in some area says in how many. |
 
 **Every figure is the area reading added.** `IncidentOrgService` resolves the
 areas a scope reaches — the shell's `Scopes`, then the areas that run the module
 (the registry's ledger) and whose register the reader may open
-(`incidents.read` on that area) — and asks each what the area page asks: the
-overview figures, the one filtered query, the kinds page's figures. The routes
+(`incidents.read` on that area) — and asks each what the area page asks: the one
+filtered query, the kinds page's figures. The routes
 carry the module marker and no area, so the parking gate has nothing to close;
 a parked area is simply not read.
 

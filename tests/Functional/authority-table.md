@@ -22,8 +22,7 @@ department confined to Kilimani.
 | incident_kinds | GET /areas/{kilimani}/modules/incidents/kinds | `incident-vocabulary.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_lists | GET /areas/{kilimani}/modules/incidents/lists | `incident-vocabulary.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_widgets | GET /areas/{kilimani}/modules/incidents/widgets | `incidents.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
-| incident_org_dashboard | GET /incidents | `areas.read` | sign-in | sign-in | refused | allowed | refused | allowed | allowed | allowed |
-| incident_org_list | GET /incidents/list | `areas.read` | sign-in | sign-in | refused | allowed | refused | allowed | allowed | allowed |
+| incident_org_list | GET /incidents | `areas.read` | sign-in | sign-in | refused | allowed | refused | allowed | allowed | allowed |
 | incident_org_kinds | GET /incidents/kinds | `areas.read` | sign-in | sign-in | refused | allowed | refused | allowed | allowed | allowed |
 | incident_delete | GET /areas/{kilimani}/modules/incidents/INC-0002/delete | `incidents.read` | sign-in | sign-in | refused | refused | refused | refused | refused | allowed |
 | incident_create | POST /areas/{kilimani}/modules/incidents | `incidents.record` | sign-in | sign-in | refused | → /areas/{kilimani}/modules/incidents/INC-0003 | refused | refused | → /areas/{kilimani}/modules/incidents/INC-0003 | → /areas/{kilimani}/modules/incidents/INC-0003 |

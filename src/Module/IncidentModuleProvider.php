@@ -93,13 +93,13 @@ final class IncidentModuleProvider implements ModuleProviderInterface, OrgPagesI
      */
 
     /**
-     * THE AREA MODULE'S OWN TABS, ONE SCOPE WIDER — the same labels in the same
-     * order, so a reader who has learnt the module in an area has learnt it here.
+     * THE AREA MODULE'S REGISTER AND ITS KINDS, ONE SCOPE WIDER — the same
+     * labels in the same order, so a reader who has learnt the module in an
+     * area has learnt it here. The first is the one the sidebar row opens.
      */
     public function orgPages(): array
     {
         return [
-            new OrgPage('overview', 'Overview', IncidentOrgController::OVERVIEW_ROUTE),
             new OrgPage('incidents', 'Incidents', IncidentOrgController::LIST_ROUTE),
             new OrgPage('kinds', 'Incident kinds', IncidentOrgController::KINDS_ROUTE),
         ];

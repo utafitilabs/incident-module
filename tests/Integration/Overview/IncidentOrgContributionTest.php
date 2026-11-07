@@ -186,7 +186,7 @@ final class IncidentOrgContributionTest extends IntegrationTestCase
         $reading = $this->reading();
 
         self::assertSame('Every area', $reading->doorLabel);
-        self::assertSame('/incidents/list', $reading->doorUrl);
+        self::assertSame('/incidents', $reading->doorUrl);
     }
 
     /** One area's worth of open work has one register behind it, and the door goes there. */
