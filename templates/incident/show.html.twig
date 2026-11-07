@@ -83,33 +83,30 @@
         csrfToken: csrfToken,
     }, with_context: false) }}
 
-    {# THE CASE FILE IS ONE RECORD GRID OF TWO CONTINUOUS COLUMNS — the shell's
-       own .recgrid, the same two columns every record page in the product shares,
-       so a card is exactly as wide as the card above it. Each cell is a .col that
-       runs the whole page rather than a row of its own, which is what lets the
-       right-hand column start at the top beside the plate on a record that
-       carries no money card at all.
-
-       A CARD WITH NOTHING IN IT IS NOT DRAWN. The money card exists where there
-       is money; where there is none the parties lead the column instead. #}
-    {# WHAT THE VIEWER MAY SEE OF THIS RECORD, asked once at the top so the two
-       columns below read the same answer. Two of the four concerns this module
-       declares are SENSITIVE and are asked here rather than at the page:
-       withholding a fact must never mean withholding the screen.
-
-         · case-files — the narrative as it was taken, the people named on it
-           and the evidence attached. An informant named on a poaching case is
-           endangered by the reading, not by the filing.
-         · case-money — the fine or the claim and what has been paid.
-
-       → Uhifadhi\Incident\Access\IncidentConcerns #}
     {% set seesCaseFile = door('case-files.read', area) %}
     {% set seesMoney = door('case-money.read', area) %}
     {% set canRecordMoney = seesMoney and door('case-money.manage', area) and incident.subcategory.carriesMoney
         and incident.status.hasReached(incident.subcategory.moneyDirection.recordableFrom) %}
-    <div class="recgrid i-caselead">
-        <div class="col">
-            <div class="c plate-fill">
+    {% set visibleEvents = incident.events|filter(e => (e.kind.value != 'money' or seesMoney) and (e.kind.value != 'evidence' or seesCaseFile)) %}
+    {% set showsMoney = seesMoney and (money or incident.claimedAtFiling is not null) %}
+    {% set reachedSteps = rail.steps|filter(s => s.state != 'todo' and s.place.value != 'closed') %}
+    {# THE INDEX, one row per card, over one column of full-width cards: the
+       record, then under a head the steps reached so far and the category's
+       fields. A card the viewer may not see has no row either. #}
+    {% set rows = [{id: 'where', label: 'Where'}] %}
+    {% if seesCaseFile %}{% set rows = rows|merge([{id: 'narrative', label: 'Narrative'}]) %}{% endif %}
+    {% set rows = rows|merge([{id: 'timeline', label: 'Timeline', count: visibleEvents|length}]) %}
+    {% if seesCaseFile %}{% set rows = rows|merge([{id: 'evidence', label: 'Evidence', count: incident.evidence|length}]) %}{% endif %}
+    {% if showsMoney %}{% set rows = rows|merge([{id: 'money', label: 'Money'}]) %}{% endif %}
+    {% if seesCaseFile %}{% set rows = rows|merge([{id: 'parties', label: 'Involved parties', count: incident.partiesOnRecord|length}]) %}{% endif %}
+    {% set rows = rows|merge([{id: 'provenance', label: 'Provenance & links', count: 1 + incident.links|length}]) %}
+    {% for step in reachedSteps %}{% set rows = rows|merge([{id: 'step-' ~ step.place.value, label: step.place.label|capitalize}]) %}{% endfor %}
+    {% set rows = rows|merge([{id: 'category', label: 'Category fields'}]) %}
+    {% embed '@Shell/_onpage.html.twig' with {label: 'On this page', rows: rows} %}
+        {% import '@UhifadhiIncident/dashboard/_ui.html.twig' as ui %}
+        {% import '@UhifadhiStorage/upload/_tile.html.twig' as evidence %}
+        {% block shell_onpage_main %}
+            <div id="where" class="c plate-fill">
                 <span class="tab">Where<span class="src">· {{ incident.zoneLabel }}</span></span>
                 {# The SAME plate the dashboard maps draw, stating this incident's
                    own category alone: one mark, one meaning, wherever it is drawn.
@@ -118,15 +115,31 @@
                 {{ render_map(map, {'role': 'img', 'aria-label': 'Where this incident was filed'}) }}
             </div>
 
-            <div class="c">
-                <span class="tab">Timeline<span class="src">· {{ incident.events|length }} events · append-only</span></span>
+            {% if seesCaseFile %}
+            <div id="narrative" class="c">
+                <span class="tab">Narrative<span class="src">· as taken · verbatim</span></span>
+                {% if incident.narrative %}
+                    <div class="i-quote">“{{ incident.narrative }}”</div>
+                {% else %}
+                    <div class="use">Nothing was taken down in the reporter's own words.</div>
+                {% endif %}
+                {% if incident.assessment %}
+                    <div class="i-assessment">{{ incident.assessment }}</div>
+                {% endif %}
+                <div class="use">The report as it was given, kept apart from the officer's assessment. Two voices, two fields —
+                    one of them is evidence and the other is judgement.</div>
+            </div>
+            {% endif %}
+
+            <div id="timeline" class="c">
+                <span class="tab">Timeline<span class="src">· {{ visibleEvents|length }} events · append-only</span></span>
                 {# THE TIMELINE OBEYS THE TWO DOORS TOO. A money event says what
                    was claimed and what was paid, and an evidence event names a
                    file that was attached — the same facts the cards above are
                    withheld for. A trail that repeated them would make the
                    withholding cosmetic. #}
                 <div class="i-tl">
-                    {% for event in incident.events|filter(e => (e.kind.value != 'money' or seesMoney) and (e.kind.value != 'evidence' or seesCaseFile)) %}
+                    {% for event in visibleEvents %}
                         <div class="i-tl-item {{ event.kind.cssClass }}">
                             <span class="i-tl-t"><time datetime="{{ event.occurredAt|date('c') }}" data-localtime-format="stamp">{{ event.occurredAt|date('D j M · H:i')|lower }}</time> · {{ event.toStatus ? event.toStatus.label : event.kind.value }}</span>
                             <span class="i-tl-b">{% if event.actorName %}<span class="who">{{ event.actorName }}</span> {% endif %}{{ event.body }}{% if event.detail %}<em>{{ event.detail }}</em>{% endif %}</span>
@@ -138,7 +151,7 @@
             </div>
 
             {% if seesCaseFile %}
-            <div class="c">
+            <div id="evidence" class="c">
                 <span class="tab">Evidence<span class="src">· {{ incident.evidence|length }} attached</span></span>
                 {# ONE GRID, ONE TILE. A file already attached and a file that arrived
                    a second ago must be the same box, or the card shows two kinds of
@@ -162,14 +175,12 @@
                     uploaded — so the map above places them where they were taken.</div>
             </div>
             {% endif %}
-        </div>
 
-        <div class="col">
             {# THE MONEY CARD EXISTS ONLY WHERE THE CATEGORY CARRIES MONEY. On a
                natural mortality there is no card at all — absent, not empty. #}
             {% set direction = money ? money.direction : incident.subcategory.moneyDirection %}
             {% if seesMoney and (money or incident.claimedAtFiling is not null) %}
-                <div class="c">
+                <div id="money" class="c">
                     <span class="tab">Money<span class="src">· this category carries {{ direction.value }}</span></span>
                     <div class="i-moneyblock">
                         <div class="hd">{{ ux_icon('incident:circle-dollar-sign') }}<b>{{ direction.heading }}</b></div>
@@ -235,7 +246,7 @@
             {% endif %}
 
             {% if seesCaseFile %}
-            <div class="c">
+            <div id="parties" class="c">
                 {# THE RECORDS AND THE REPORT FORM'S PARTIES, once each. #}
                 {% set parties = incident.partiesOnRecord %}
                 <span class="tab">Involved parties<span class="src">· {{ parties|length }}</span></span>
@@ -248,13 +259,11 @@
                 {% else %}
                     <div class="use">Nobody has been named on this record yet.</div>
                 {% endfor %}
-                <div class="use i-partynote">A suspect, a claimant, a witness and the ranger who filed it are the same shape of
-                    record wearing different roles — the design refuses to build four tables. The animal is a party too, so a
-                    repeat offender can be recognised across incidents.</div>
+                <div class="use i-partynote">A suspect, a claimant, a witness and the ranger who filed it are all parties, each with a role. The animal is a party too, so a repeat offender can be recognised across incidents.</div>
             </div>
             {% endif %}
 
-            <div class="c">
+            <div id="provenance" class="c">
                 <span class="tab">Provenance &amp; links</span>
                 {% if incident.hasProvenance and incident.sourceRecordDeletedAt %}
                     {# THE RECORD IT CAME FROM WAS DELETED (ruled 28 Sep, #48): it stays, without its link. #}
@@ -280,99 +289,80 @@
                     that parentage forever — that is the hand-off the patrols module's <b>File as incident</b> button writes.</div>
             </div>
 
-            {% if seesCaseFile %}
-            <div class="c">
-                <span class="tab">Narrative<span class="src">· as taken · verbatim</span></span>
-                {% if incident.narrative %}
-                    <div class="i-quote">“{{ incident.narrative }}”</div>
-                {% else %}
-                    <div class="use">Nothing was taken down in the reporter's own words.</div>
-                {% endif %}
-                {% if incident.assessment %}
-                    <div class="i-assessment">{{ incident.assessment }}</div>
-                {% endif %}
-                <div class="use">The report as it was given, kept apart from the officer's assessment. Two voices, two fields —
-                    one of them is evidence and the other is judgement.</div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
+            <h2 class="zone">The steps</h2>
+            <p class="pgsub">One panel per step reached so far.{% if incident.subcategory.carriesMoney %} Resolution opens once the money on this incident is settled or waived with a reason; the{% else %} The{% endif %} case closes by itself {{ constant('Uhifadhi\\Incident\\Workflow\\IncidentWorkflow::CLOSE_AFTER_DAYS') }} days after resolution.</p>
 
-    <h2 class="zone">The steps</h2>
-    <p class="pgsub">Each step owns a panel, and a panel only exists once its step has been reached — nobody fills in a
-        resolution on a report nobody has verified.</p>
-
-    {# GATED PANELS. A panel for an unreached place is NOT RENDERED, ever. #}
-    <div class="grid g2 i-steps-grid">
-        {# A panel for an unreached step is not rendered at all; "closed" is
-           never a person's panel, because the clock reaches it. #}
-        {% for step in rail.steps|filter(s => s.state != 'todo' and s.place.value != 'closed') %}
-            <div class="c{{ step.state == 'now' ? ' i-step-now' }}">
-                <span class="tab">Step {{ step.place.step }} — {{ step.place.label }}<span class="src">· {{ step.state == 'now' ? 'current step' : 'done' }}</span></span>
-                {# The event that PUT it in this place — the filing itself for
-                   step one, and the transition for every step after. #}
-                {% set stepEvents = step.place.value == 'reported'
-                    ? incident.events|slice(0, 1)
-                    : incident.events|filter(e => e.toStatus and e.toStatus.value == step.place.value) %}
-                {% for event in stepEvents %}
-                    <div class="rln"><span>{{ event.actorName ? 'By' : 'Recorded' }}</span><span>{{ event.actorName ?? 'the clock' }}</span></div>
-                    <div class="rln"><span>When</span><span><time datetime="{{ event.occurredAt|date('c') }}" data-localtime-format="daystamp">{{ event.occurredAt|date('D j M · H:i')|lower }}</time></span></div>
-                    {% if event.detail %}<div class="rln"><span>How</span><span>{{ event.detail }}</span></div>{% endif %}
-                {% endfor %}
-                {% if step.state == 'now' %}
-                    {% for reason in rail.blocked %}<div class="rln"><span>Blocking</span><span class="w">{{ reason }}</span></div>{% endfor %}
-                    <div class="rln"><span>Elapsed</span><span>{{ incident.ageInHours(now) }} h of a {{ incident.subcategory.termLabel }} term</span></div>
-                {% endif %}
-            </div>
-        {% endfor %}
-    </div>
-
-    {# WHAT THIS WORD ASKED, AND WHAT WAS ANSWERED — one set per behaviour block
-       the sub-category switched on, in the order the kinds editor holds them and
-       in the order the block puts its questions. A block with no answers still
-       prints, with a dash under each question, because "nobody answered this" is
-       a fact about the record and an absent panel would hide it.
-
-       A REPEATING BLOCK PRINTS ITS ROWS AS ROWS. Twelve snares and two carcasses
-       were two answers when they were given and they stay two answers here. #}
-    <h2 class="zone">What this word asked</h2>
-    <p class="pgsub">A sub-category's questions are the questions of the <b>behaviour blocks</b> it switches on, and of
-        nothing else. On a word that carries no money there is no money question — absent, not greyed out.</p>
-
-    {# THE PARTIES BLOCK IS THE CASE FILE, wherever it is drawn. The block a
-       word switched on asks for a suspect's name and a claimant's household,
-       and printing those answers here would hand back exactly what the
-       Involved parties card is withheld for. #}
-    {% for set in blockSets|filter(s => s.block.value != 'parties' or seesCaseFile) %}
-        {% set answers = incident.blockAnswers[set.block.value]|default({}) %}
-        <div class="i-fieldset">
-            <div class="hd">{{ set.title }}<span class="src">· {{ set.caption }}</span></div>
-            {% if set.repeats %}
-                {% for row in answers.rows|default([]) %}
-                    {% set cells = [] %}
-                    {% for question in set.rowQuestions %}
-                        {% if row[question.key] is defined %}
-                            {% set cells = cells|merge([question.label|lower ~ ' ' ~ row[question.key]]) %}
+            {# GATED PANELS. A panel for an unreached place is NOT RENDERED, ever. #}
+                {# A panel for an unreached step is not rendered at all; "closed" is
+                   never a person's panel, because the clock reaches it. #}
+                {% for step in reachedSteps %}
+                    <div id="step-{{ step.place.value }}" class="c{{ step.state == 'now' ? ' i-step-now' }}">
+                        <span class="tab">Step {{ step.place.step }} — {{ step.place.label }}<span class="src">· {{ step.state == 'now' ? 'current step' : 'done' }}</span></span>
+                        {# The event that PUT it in this place — the filing itself for
+                           step one, and the transition for every step after. #}
+                        {% set stepEvents = step.place.value == 'reported'
+                            ? incident.events|slice(0, 1)
+                            : incident.events|filter(e => e.toStatus and e.toStatus.value == step.place.value) %}
+                        {% for event in stepEvents %}
+                            <div class="rln"><span>{{ event.actorName ? 'By' : 'Recorded' }}</span><span>{{ event.actorName ?? 'the clock' }}</span></div>
+                            <div class="rln"><span>When</span><span><time datetime="{{ event.occurredAt|date('c') }}" data-localtime-format="daystamp">{{ event.occurredAt|date('D j M · H:i')|lower }}</time></span></div>
+                            {% if event.detail %}<div class="rln"><span>How</span><span>{{ event.detail }}</span></div>{% endif %}
+                        {% endfor %}
+                        {% if step.state == 'now' %}
+                            {% for reason in rail.blocked %}<div class="rln"><span>Blocking</span><span class="w">{{ reason }}</span></div>{% endfor %}
+                            <div class="rln"><span>Elapsed</span><span>{{ incident.ageInHours(now) }} h of a {{ incident.subcategory.termLabel }} term</span></div>
                         {% endif %}
-                    {% endfor %}
-                    <div class="i-fld"><label>{{ loop.index }}</label><span>{{ cells|join(' · ') }}</span></div>
-                {% else %}
-                    <div class="i-fld"><label>1</label><span>—</span></div>
+                    </div>
                 {% endfor %}
-            {% endif %}
-            {% for question in set.questions %}
-                <div class="i-fld"><label>{{ question.label }}</label>
-                    {# AN ANSWER FROM ONE OF THE AREA'S LISTS IS PRINTED AS THE WORD,
-                       not as the stable key the record keeps — and a retired word still
-                       resolves, because that is what retiring promises. #}
-                    <span>{% if set.block.isMoney %}{{ not seesMoney ? 'withheld' : (incident.claimedAtFiling is null ? '—' : ui.amount(money ? money.currency : 'TZS', incident.claimedAtFiling, 'claimed at filing')) }}{% elseif question.areaList and answers[question.key] is defined %}{{ areaWords.label(question.areaList, answers[question.key]) }}{% else %}{{ answers[question.key]|default('—') }}{% endif %}</span></div>
+
+            {# WHAT THIS WORD ASKED, AND WHAT WAS ANSWERED — one set per behaviour block
+               the sub-category switched on, in the order the kinds editor holds them and
+               in the order the block puts its questions. A block with no answers still
+               prints, with a dash under each question, because "nobody answered this" is
+               a fact about the record and an absent panel would hide it.
+
+               A REPEATING BLOCK PRINTS ITS ROWS AS ROWS. Twelve snares and two carcasses
+               were two answers when they were given and they stay two answers here. #}
+            <h2 class="zone">What this category asks for</h2>
+            <p class="pgsub">The fields this category records.{% if incident.subcategory.carriesMoney %} It carries {{ incident.subcategory.moneyDirection.value }}, so the amount claimed at filing is recorded here too.{% endif %}</p>
+
+            {# THE PARTIES BLOCK IS THE CASE FILE, wherever it is drawn. The block a
+               word switched on asks for a suspect's name and a claimant's household,
+               and printing those answers here would hand back exactly what the
+               Involved parties card is withheld for. #}
+            <div id="category">
+            {% for set in blockSets|filter(s => s.block.value != 'parties' or seesCaseFile) %}
+                {% set answers = incident.blockAnswers[set.block.value]|default({}) %}
+                <div class="i-fieldset">
+                    <div class="hd">{{ set.title }}<span class="src">· {{ set.caption }}</span></div>
+                    {% if set.repeats %}
+                        {% for row in answers.rows|default([]) %}
+                            {% set cells = [] %}
+                            {% for question in set.rowQuestions %}
+                                {% if row[question.key] is defined %}
+                                    {% set cells = cells|merge([question.label|lower ~ ' ' ~ row[question.key]]) %}
+                                {% endif %}
+                            {% endfor %}
+                            <div class="i-fld"><label>{{ loop.index }}</label><span>{{ cells|join(' · ') }}</span></div>
+                        {% else %}
+                            <div class="i-fld"><label>1</label><span>—</span></div>
+                        {% endfor %}
+                    {% endif %}
+                    {% for question in set.questions %}
+                        <div class="i-fld"><label>{{ question.label }}</label>
+                            {# AN ANSWER FROM ONE OF THE AREA'S LISTS IS PRINTED AS THE WORD,
+                               not as the stable key the record keeps — and a retired word still
+                               resolves, because that is what retiring promises. #}
+                            <span>{% if set.block.isMoney %}{{ not seesMoney ? 'withheld' : (incident.claimedAtFiling is null ? '—' : ui.amount(money ? money.currency : 'TZS', incident.claimedAtFiling, 'claimed at filing')) }}{% elseif question.areaList and answers[question.key] is defined %}{{ areaWords.label(question.areaList, answers[question.key]) }}{% else %}{{ answers[question.key]|default('—') }}{% endif %}</span></div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="i-fieldset">
+                    <div class="hd">{{ incident.subcategory.path }}</div>
+                    <div class="i-fld"><label>Fields</label><span>this category records nothing beyond what every incident answers</span></div>
+                </div>
             {% endfor %}
-        </div>
-    {% else %}
-        <div class="i-fieldset">
-            <div class="hd">{{ incident.subcategory.path }}</div>
-            <div class="i-fld"><label>Questions</label><span>this word switches on no behaviour block, so its form asks
-                    only what every incident answers</span></div>
-        </div>
-    {% endfor %}
+            </div>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

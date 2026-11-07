@@ -398,7 +398,7 @@
    floating legend, its control stack, its fullscreen and its refusal to invent a
    height are the atlas's. */
 .c.plate-fill{display:flex;flex-direction:column;
-  --i-plate-imagery:400px;
+  --i-plate-imagery:min(58vh,560px);
   /* The atlas sets the imagery frame 8px below whatever precedes it. */
   --i-plate-frame-offset:8px;
   --map-plate-height:calc(var(--i-plate-imagery) + var(--i-plate-frame-offset))}
@@ -866,11 +866,9 @@
 
 /* The case file's header chips and the small slots the design set inline. */
 .i-headchips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
-/* The gap the design leaves between the transition row and the case file's grid;
-   inside it the cards take the grid's own 16px. */
-.i-caselead{margin-top:22px}
+/* The gap the design leaves between the transition row and the case file's index. */
+.i-trans~.onpage{margin-top:22px}
 .i-step-now{border-color:color-mix(in srgb,var(--acc) 40%,transparent)}
-.i-steps-grid{margin-bottom:0}
 .i-moneywhy{font-size:11.5px;margin-bottom:0}
 .i-partynote{font-size:11.5px}
 .i-assessment{font-size:12.5px;color:var(--tx);margin-top:10px;line-height:1.6}

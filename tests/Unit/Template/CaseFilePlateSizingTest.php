@@ -18,9 +18,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * THE CASE FILE'S MAP PLATE IS SIZED BY THIS SCREEN'S OWN DESIGN.
  *
- * The incident case file the design draws gives the "Where" card a 400px map and
- * lets the card end where the map ends — `.recgrid>.col>.c.plate-fill`, a flex
- * column whose viewer is `flex:none;height:400px`. Sizing
+ * The incident case file the design draws gives the "Where" card the house
+ * record plate and lets the card end where the map ends — `.pp-main>.c.plate-fill`,
+ * a flex column whose viewer is `flex:none;height:min(58vh,560px)`. Sizing
  * a screen against a sibling module's screen instead of against its own design
  * is how a port drifts while every test stays green, so the rule is asserted
  * here against what the design file carries.
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
  * THE HEIGHT IS STATED ON THE PLATE ROOT, which is the only thing about a map
  * this module says. It sizes the plate, not the imagery, so it is the sum of the
  * imagery the design draws and what the plate stacks above it — each part named,
- * so 400px of design is 400px of map rather than 400px of plate. The plate's column, its imagery frame, its floating legend
+ * so the design's height is map rather than plate. The plate's column, its imagery frame, its floating legend
  * and its fullscreen are the atlas's; a module that restated any of them would
  * be the one map in the product that reads differently.
  *
@@ -43,8 +43,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class CaseFilePlateSizingTest extends TestCase
 {
-    /** The height the design's own "Where" card draws its IMAGERY at. */
-    private const string DESIGN_IMAGERY_HEIGHT = '400px';
+    /** The height the design's own "Where" card draws its IMAGERY at: the house record plate. */
+    private const string DESIGN_IMAGERY_HEIGHT = 'min(58vh,560px)';
 
     /** What the atlas offsets that imagery frame by inside the plate. */
     private const string ATLAS_FRAME_OFFSET = '8px';
@@ -53,7 +53,7 @@ final class CaseFilePlateSizingTest extends TestCase
      * `--map-plate-height` sizes the PLATE, and the plate is the imagery plus
      * everything stacked above it inside — here, the offset the atlas sets the
      * imagery frame at. So the height is that sum, each part named, and a bare
-     * 400px is 400px of plate and eight pixels less of map.
+     * design height is that much plate and eight pixels less of map.
      */
     public function testThePlateIsTheSumThatLeavesTheImageryTheDesignsHeight(): void
     {
@@ -100,12 +100,6 @@ final class CaseFilePlateSizingTest extends TestCase
             $sheet,
             'A floor under a fixed height is a floor that can only fight it.',
         );
-    }
-
-    /** And a sibling module's plate height appears nowhere in this sheet. */
-    public function testNoSiblingModulesPlateHeightIsStatedHere(): void
-    {
-        self::assertStringNotContainsString('min(58vh,560px)', self::stylesheet());
     }
 
     /**

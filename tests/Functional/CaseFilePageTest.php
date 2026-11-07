@@ -356,15 +356,11 @@ final class CaseFilePageTest extends FunctionalTestCase
     }
 
     /**
-     * THE CASE FILE IS ONE RECORD GRID OF TWO CONTINUOUS COLUMNS, and the grid
-     * is the shell's.
-     *
-     * Both cells are columns that run the whole page, so the membership is a
-     * reading order and not a set of rows: where, then the timeline, then the
-     * evidence down the left; the money, the parties, the provenance and the
-     * narrative down the right.
+     * THE CASE FILE IS ITS FACTS STRIP, THE INDEX AND ONE COLUMN. Each index
+     * row takes the reader to one card, in the cards' own order: the record,
+     * then under a head the steps reached so far and the category's fields.
      */
-    public function testTheCaseFileIsOneGridOfTwoContinuousColumns(): void
+    public function testTheCaseFileIsAnIndexOverOneColumnOfCards(): void
     {
         $area = $this->anAreaWithKinds();
         $incident = $this->anIncident($area, 'livestock-depredation');
@@ -372,54 +368,56 @@ final class CaseFilePageTest extends FunctionalTestCase
         $this->em->flush();
         $this->client->loginUser($this->aReporter());
 
-        $grid = $this->client->request('GET', \sprintf(
+        $page = $this->client->request('GET', \sprintf(
             '/areas/%s/modules/incidents/%s',
             $this->uuidOf($area),
             $incident->getReference(),
-        ))->filter('.recgrid');
+        ));
 
-        self::assertCount(1, $grid, 'The design composes the case file as one grid, not a stack of rows.');
-
-        $columns = $grid->children();
-        self::assertCount(2, $columns);
-        self::assertCount(2, $grid->children('.col'), 'Both cells stack cards, so both are columns.');
-
-        self::assertSame(['Where', 'Timeline', 'Evidence'], self::cardsIn($columns->eq(0)));
+        self::assertCount(0, $page->filter('.recgrid'));
         self::assertSame(
-            ['Money', 'Involved parties', 'Provenance & links', 'Narrative'],
-            self::cardsIn($columns->eq(1)),
+            ['#where', '#narrative', '#timeline', '#evidence', '#money', '#parties', '#provenance', '#step-reported', '#category'],
+            $page->filter('.onpage-nav .onpage-row')->each(static fn (Crawler $row): ?string => $row->attr('href')),
+        );
+        self::assertSame(
+            ['Where', 'Narrative', 'Timeline', 'Evidence', 'Money', 'Involved parties', 'Provenance & links', 'Reported', 'Category fields'],
+            $page->filter('.onpage-nav .onpage-l')->each(static fn (Crawler $l): string => $l->text()),
+        );
+        self::assertCount(0, $page->filter('.onpage-nav p.onpage-h')->slice(1), 'The index carries no head: every row is a card, and the step rows follow the record rows.');
+        self::assertSame(
+            (string) \count($incident->getEvents()),
+            $page->filter('.onpage-nav a[href="#timeline"] .onpage-n')->text(),
         );
 
-        self::assertCount(
-            1,
-            $columns->eq(0)->children('.plate-fill'),
-            'The plate leads the left column.',
+        self::assertSame(
+            ['where', 'narrative', 'timeline', 'evidence', 'money', 'parties', 'provenance', 'step-reported', 'category'],
+            $page->filter('.onpage-main > [id]')->each(static fn (Crawler $c): ?string => $c->attr('id')),
         );
+        self::assertCount(1, $page->filter('#where.plate-fill'), 'The plate leads the column.');
+        self::assertSame('What this category asks for', $page->filter('.onpage-main h2.zone')->eq(1)->text());
+        self::assertStringNotContainsString('behaviour block', $page->filter('.onpage-main')->text());
     }
 
     /**
-     * A RECORD THAT CARRIES NO MONEY HAS NO MONEY CARD — and the right column
-     * still starts at the top, beside the plate, which is the whole reason the
-     * case file is two columns rather than three aligned rows.
+     * A RECORD THAT CARRIES NO MONEY HAS NO MONEY CARD, and no index row for one.
      */
-    public function testWithoutMoneyTheRightColumnStartsWithTheParties(): void
+    public function testWithoutMoneyTheIndexHasNoMoneyRow(): void
     {
         $area = $this->anAreaWithKinds();
         $incident = $this->anIncident($area, 'natural-mortality', 'Wildebeest carcass, no injury pattern');
         $this->client->loginUser($this->aReporter());
 
-        $grid = $this->client->request('GET', \sprintf(
+        $page = $this->client->request('GET', \sprintf(
             '/areas/%s/modules/incidents/%s',
             $this->uuidOf($area),
             $incident->getReference(),
-        ))->filter('.recgrid');
+        ));
 
-        self::assertCount(1, $grid);
-        self::assertSame(['Where', 'Timeline', 'Evidence'], self::cardsIn($grid->children()->eq(0)));
         self::assertSame(
-            ['Involved parties', 'Provenance & links', 'Narrative'],
-            self::cardsIn($grid->children()->eq(1)),
+            ['Where', 'Narrative', 'Timeline', 'Evidence', 'Involved parties', 'Provenance & links', 'Step 1 — reported'],
+            self::cardsIn($page->filter('.onpage-main')),
         );
+        self::assertCount(0, $page->filter('.onpage-nav a[href="#money"]'));
     }
 
     /**

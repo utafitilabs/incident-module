@@ -24,7 +24,7 @@ All under `/areas/{uuid}/modules/incidents`, the same shape as patrols.
 | `incident_settings_save` | `/configure/settings` (POST) | Saves the module's per-area settings. |
 | `incident_new` | `/new` | The report flow, as its own page. |
 | `incident_create` | `` (POST) | Files it. |
-| `incident_show` | `/{reference}` | One case file. |
+| `incident_show` | `/{reference}` | One case file: the facts strip, the rail, then the index ("On this page") over one column — Where, Narrative, Timeline, Evidence, Money, Involved parties, Provenance & links, and under the head *The steps* a row per step reached and the category's fields. A card the reader may not see has no row. |
 | `incident_transition` | `/{reference}/transition/{name}` (POST) | Moves it on. Both the case file's buttons and the status board's drag-and-drop post here. |
 
 Plus the eight widget-library write endpoints the shell's `WidgetEndpoint`
@@ -278,7 +278,7 @@ produces is ever rendered HTML on a map.
 **How tall a plate is, is a number and nothing else.** A plate carries a real
 height off `--map-plate-height` and refuses to stretch to its row; this module
 sets the number per screen (460px on the map and map+results widgets, the design's
-`min(46vh,440px)` on the case file's Where card) and states not one word about the
+the house record plate, `min(58vh,560px)`, on the case file's Where card) and states not one word about the
 plate's own layout.
 
 The filter row goes in the plate's filter slot, so it is one row above the map
