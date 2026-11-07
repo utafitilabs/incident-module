@@ -3,7 +3,7 @@
    data would make a busy month a page nobody can read.
 
    THE PAGE IS ONE GET. The filter row, the counts inside it, these rows and the
-   pager are all readings of a single query, so the count in the caption and the
+   register foot are all readings of a single query, so the count in the caption and the
    rows under it can never be answering different questions.
 
    THE FRAME IS THE SHELL'S. The tab strip, the Configure action and the way back
@@ -33,54 +33,38 @@
 
 {% block incident_page %}
 <div class="c">
-    <span class="tab">Incidents<span class="src">· {{ filter.from ? filter.from|date('F Y')|lower ~ ' · ' }}{{ list.total }} {{ list.total == 1 ? 'incident' : 'incidents' }}</span></span>
+    <span class="tab">Incidents<span class="src">· {{ filter.from ? filter.from|date('F Y')|lower ~ ' · ' }}{{ table.total }} {{ table.total == 1 ? 'incident' : 'incidents' }}</span></span>
 
     {{ include('@UhifadhiIncident/dashboard/_filters.html.twig', {here: 'incident_list'}) }}
 
     <table class="tbl">
-        <tr><th>id</th><th>category</th><th>what happened</th><th>zone</th><th>status</th><th>severity</th><th class="num">money</th><th>reported</th><th></th></tr>
-        {% for incident in list.incidents %}
+        <thead><tr><th>id</th><th>category</th><th>what happened</th><th>zone</th><th>status</th><th>severity</th><th class="num">money</th><th>reported</th><th></th></tr></thead>
+        <tbody>
+        {% for incident in rows %}
             <tr>
                 <td><a href="{{ path('incident_show', {uuid: area.uuid, reference: incident.reference}) }}">{{ ui.id(incident.reference) }}</a></td>
                 <td>{{ ui.cat(incident.kind, incident.subcategory.label) }}</td>
                 <td class="i-what">{{ incident.headline }}
-                    <em>{{ incident.sourceRecordLabel ?? incident.source.badge }}</em></td>
+                    <span class="sub">{{ incident.sourceRecordLabel ?? incident.source.badge }}</span></td>
                 <td>{{ ui.zone(incident) }}</td>
                 <td>{{ ui.status(incident.status) }}</td>
                 <td>{{ ui.severity(incident.severity) }}</td>
                 <td class="num">{{ ui.moneyTag(incident) }}</td>
                 <td>{{ ui.when(incident.reportedAt, now) }}</td>
-                <td class="num"><a class="open-btn" href="{{ path('incident_show', {uuid: area.uuid, reference: incident.reference}) }}">Open →</a></td>
+                <td class="door"><a class="open-btn" href="{{ path('incident_show', {uuid: area.uuid, reference: incident.reference}) }}">Open →</a></td>
             </tr>
         {% else %}
             <tr><td colspan="9" class="use">{{ filter.isNarrowed ? 'Nothing matches this filter. That is a fact about the question, not about the area.' : 'Nothing filed in this window. That is a fact about the list, not about the area.' }}</td></tr>
         {% endfor %}
+        </tbody>
     </table>
 
-    {# THE PAGER, in the shell's own vocabulary. It carries the whole question,
-       so paging never quietly widens or narrows what is being paged through. #}
-    <div class="pgr">
-        <span class="cnt">{{ list.firstIndex }}–{{ list.lastIndex }} of {{ list.total }}</span>
-        <span class="sp"></span>
-        {% if list.page > 1 %}
-            <a href="{{ path('incident_list', {uuid: area.uuid, page: list.page - 1}|merge(filter.toQuery)) }}">← Newer</a>
-        {% else %}
-            <a class="off" href="#">← Newer</a>
-        {% endif %}
-        {% for p in 1..list.pageCount %}
-            {% if p == list.page %}
-                <span class="pg-n on">{{ p }}</span>
-            {% elseif p <= 3 or p == list.pageCount %}
-                <a href="{{ path('incident_list', {uuid: area.uuid, page: p}|merge(filter.toQuery)) }}">{{ p }}</a>
-            {% elseif p == 4 %}
-                <span class="pg-n gap">…</span>
-            {% endif %}
-        {% endfor %}
-        {% if list.page < list.pageCount %}
-            <a href="{{ path('incident_list', {uuid: area.uuid, page: list.page + 1}|merge(filter.toQuery)) }}">Older →</a>
-        {% else %}
-            <a class="off" href="#">Older →</a>
-        {% endif %}
-    </div>
+    {# THE FOOT CARRIES THE WHOLE QUESTION: every size and every arrow is
+       this address with the filter kept, so paging never widens or narrows
+       what is being paged through. #}
+    {{ include('@Shell/_foot.html.twig', {
+        count: table.total, noun: 'incidents', one: 'incident',
+        perPage: table.size, page: table.page, pages: table.pages, links: links,
+    }, with_context: false) }}
 </div>
 {% endblock %}

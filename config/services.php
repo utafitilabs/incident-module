@@ -43,7 +43,6 @@ use Uhifadhi\Incident\Service\IncidentCaseService;
 use Uhifadhi\Incident\Service\IncidentDashboardService;
 use Uhifadhi\Incident\Service\IncidentEvidenceService;
 use Uhifadhi\Incident\Service\IncidentKindsOverviewService;
-use Uhifadhi\Incident\Service\IncidentListService;
 use Uhifadhi\Incident\Service\IncidentMapService;
 use Uhifadhi\Incident\Service\IncidentMoneyService;
 use Uhifadhi\Incident\Service\IncidentOrgFigures;
@@ -347,19 +346,12 @@ return static function (ContainerConfigurator $container): void {
 
     $services->alias(IncidentController::class, 'incident.controller.dashboard')->public();
 
-    /*
-     * WHICH SLICE OF THE FILTERED ANSWER IS ON SCREEN. Pure — it takes the
-     * answer the counts are already worked out from, so the caption's total and
-     * the rows under it are two readings of one thing.
-     */
-    $services->set('incident.list', IncidentListService::class);
-
     $services->set('incident.controller.list', IncidentListController::class)
         ->args([
             service('twig'),
             service('incident.dashboard'),
             service(TaxonomyKindRepository::class),
-            service('incident.list'),
+            service('shell.table_page'),
             param('incident.record_screens'),
             service('security.token_storage')->nullOnInvalid(),
         ])

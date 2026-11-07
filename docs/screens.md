@@ -19,7 +19,7 @@ All under `/areas/{uuid}/modules/incidents`, the same shape as patrols.
 | Route | Path | What it is |
 |---|---|---|
 | `incident_dashboard` | `` | The Overview tab: this person's own composition of the module's widgets. |
-| `incident_list` | `/incidents` | The Incidents tab: every incident the window holds, twenty a page, driven by the one filter. |
+| `incident_list` | `/incidents` | The Incidents tab: every incident the window holds, driven by the one filter, ending in the Shell register foot (twenty a page, or 50, 100 or all). |
 | `incident_widgets` | `/widgets` | The widget library — the first section of the configure page, on an address of its own. |
 | `incident_kinds` | `/kinds` | The incident kinds — the second section of the configure page, on an address of its own. `/taxonomy` permanently redirects here. |
 | `incident_settings_save` | `/configure/settings` (POST) | Saves the module's per-area settings. |

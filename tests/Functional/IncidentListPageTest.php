@@ -15,7 +15,7 @@ namespace Uhifadhi\Incident\Tests\Functional;
 
 use Symfony\Component\DomCrawler\Crawler;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
-use Uhifadhi\Incident\Service\IncidentListService;
+use Uhifadhi\Bundle\ShellBundle\Model\TablePage;
 
 /**
  * THE FULL LIST — every incident the window holds, one page at a time, driven by
@@ -24,6 +24,8 @@ use Uhifadhi\Incident\Service\IncidentListService;
  */
 final class IncidentListPageTest extends FunctionalTestCase
 {
+    private const int PER_PAGE = 20;
+
     private function url(AreaOfInterest $area, string $query = ''): string
     {
         return \sprintf('/areas/%s/modules/incidents/incidents%s', $this->uuidOf($area), '' === $query ? '' : '?'.$query);
@@ -41,7 +43,7 @@ final class IncidentListPageTest extends FunctionalTestCase
         self::assertResponseIsSuccessful();
         self::assertSame(
             ['id', 'category', 'what happened', 'zone', 'status', 'severity', 'money', 'reported', ''],
-            $crawler->filter('table.tbl th')->each(static fn (Crawler $th): string => trim($th->text())),
+            $crawler->filter('table.tbl thead th')->each(static fn (Crawler $th): string => trim($th->text())),
         );
         self::assertCount(1, $crawler->filter('table.tbl tr a.open-btn'));
     }
@@ -79,25 +81,74 @@ final class IncidentListPageTest extends FunctionalTestCase
         self::assertStringContainsString('/modules/incidents/incidents', (string) $row->filter('a.i-ddopt')->first()->attr('href'));
     }
 
-    /** Twenty rows a page, and the pager carries the rest of the answer. */
-    public function testAPageHoldsTwentyRowsAndThePagerCarriesTheRest(): void
+    /** Twenty rows a page, and the Shell foot carries the rest of the answer. */
+    public function testAPageHoldsTwentyRowsAndTheFootCarriesTheRest(): void
     {
         $area = $this->anAreaWithKinds();
         $reporter = $this->aReporter();
-        for ($i = 0; $i < IncidentListService::PER_PAGE + 3; ++$i) {
+        for ($i = 0; $i < self::PER_PAGE + 3; ++$i) {
             $this->anIncident($area, 'livestock-depredation', 'Filed report number '.$i, $reporter);
         }
         $this->client->loginUser($reporter);
 
-        $crawler = $this->client->request('GET', $this->url($area));
+        $crawler = $this->client->request('GET', $this->url($area, 'status=reported'));
 
-        self::assertCount(IncidentListService::PER_PAGE, $crawler->filter('table.tbl tr a.open-btn'));
-        self::assertStringContainsString('1–20 of 23', $crawler->filter('.pgr .cnt')->text());
+        self::assertCount(self::PER_PAGE, $crawler->filter('table.tbl tbody tr a.open-btn'));
+        self::assertCount(0, $crawler->filter('.pgr'));
+        $foot = $crawler->filter('.c > .rdf-foot');
+        self::assertCount(1, $foot);
+        self::assertStringStartsWith('23 incidents · 20 per page', trim($foot->filter('span')->first()->text()));
+        self::assertStringContainsString('page 1 of 2', $foot->filter('.rdf-page')->text());
 
-        $crawler = $this->client->request('GET', $this->url($area, 'page=2'));
+        $sizes = $foot->filter('details.rdf-size a.i-ddopt');
+        self::assertSame(TablePage::SIZES, $sizes->each(static fn (Crawler $a): string => strtolower(trim($a->text()))));
+        foreach ($sizes as $a) {
+            \assert($a instanceof \DOMElement);
+            self::assertStringContainsString('status=reported', $a->getAttribute('href'), 'A new size keeps the filter.');
+            self::assertStringNotContainsString('page=', $a->getAttribute('href'), 'A new size starts again at page 1.');
+        }
+
+        $next = $foot->filter('.rdf-page a[aria-label="Next page"]');
+        self::assertCount(1, $next);
+        $crawler = $this->client->request('GET', (string) $next->attr('href'));
 
         self::assertResponseIsSuccessful();
-        self::assertCount(3, $crawler->filter('table.tbl tr a.open-btn'));
+        self::assertCount(3, $crawler->filter('table.tbl tbody tr a.open-btn'));
+        self::assertStringContainsString('page 2 of 2', $crawler->filter('.rdf-page')->text());
+
+        $crawler = $this->client->request('GET', $this->url($area, 'per=all'));
+
+        self::assertCount(self::PER_PAGE + 3, $crawler->filter('table.tbl tbody tr a.open-btn'));
+        self::assertStringContainsString('all on one page', $crawler->filter('.rdf-foot')->text());
+    }
+
+    /** A page number is navigation: an unreadable one opens the first page, never a 400. */
+    public function testAnUnreadablePageNumberOpensTheFirstPage(): void
+    {
+        $area = $this->anAreaWithKinds();
+        $this->anIncident($area);
+        $this->client->loginUser($this->aReporter());
+
+        $crawler = $this->client->request('GET', $this->url($area, 'page=abc&per=7'));
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('page 1 of 1', $crawler->filter('.rdf-page')->text());
+        self::assertStringContainsString('20 per page', $crawler->filter('.rdf-foot')->text());
+    }
+
+    /** Rows in the house shape: the source on the cell's `.sub` line, the door in its own cell. */
+    public function testRowsAreTheHouseTableShape(): void
+    {
+        $area = $this->anAreaWithKinds();
+        $this->anIncident($area);
+        $this->client->loginUser($this->aReporter());
+
+        $crawler = $this->client->request('GET', $this->url($area));
+
+        $row = $crawler->filter('table.tbl tbody tr')->first();
+        self::assertCount(1, $row->filter('td.i-what .sub'));
+        self::assertCount(1, $row->filter('td.door a.open-btn'));
+        self::assertCount(0, $crawler->filter('table.tbl tbody th'));
     }
 
     /** The search narrows the list, and the caption counts what it narrowed to. */

@@ -23,12 +23,12 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Twig\Environment;
 use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Bundle\RegistryBundle\RegistryBundle;
+use Uhifadhi\Bundle\ShellBundle\Service\TablePageService;
 use Uhifadhi\Contracts\Entity\UserInterface;
 use Uhifadhi\Incident\Model\IncidentFilter;
 use Uhifadhi\Incident\Module\IncidentModuleProvider;
 use Uhifadhi\Incident\Repository\TaxonomyKindRepository;
 use Uhifadhi\Incident\Service\IncidentDashboardService;
-use Uhifadhi\Incident\Service\IncidentListService;
 
 /**
  * EVERY INCIDENT FILED IN THIS AREA — the dashboard's list widget without a cap
@@ -57,7 +57,7 @@ final readonly class IncidentListController
         private Environment $twig,
         private IncidentDashboardService $dashboard,
         private TaxonomyKindRepository $kinds,
-        private IncidentListService $list,
+        private TablePageService $pages,
         /**
          * Whether the writing screens EXIST in this installation — they need
          * SecurityBundle. Whether THIS person may file is the other half, asked
@@ -90,6 +90,10 @@ final readonly class IncidentListController
         $filter = IncidentFilter::fromRequest($request, $area, $this->kinds->forArea($area), ...IncidentController::windowFor($request, $now));
 
         $dashboard = $this->dashboard->build($filter, $now, $viewer);
+        // ONE PAGE OF THE ANSWER THE COUNTS ARE WORKED OUT FROM, so the caption's
+        // total and the rows under it are two readings of one thing. `?page`
+        // and `?per` are untrusted: the pager falls back rather than failing.
+        $table = $this->pages->read($request, \count($dashboard->recent));
 
         return new Response($this->twig->render('@UhifadhiIncident/list/show.html.twig', [
             'area' => $area,
@@ -99,9 +103,9 @@ final readonly class IncidentListController
             // is the one place they are worked out.
             'dashboard' => $dashboard,
             'recordScreens' => $this->recordScreens,
-            // Untrusted like every query field: an unreadable page is the first
-            // one, and the service clamps a page past the end.
-            'list' => $this->list->page($dashboard->recent, max(1, $request->query->getInt('page', 1))),
+            'rows' => $table->slice($dashboard->recent),
+            'table' => $table,
+            'links' => $this->pages->links($request, $table),
         ]));
     }
 
