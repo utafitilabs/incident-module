@@ -22,6 +22,7 @@ use Uhifadhi\Contracts\Shell\ModuleTabsInterface;
 use Uhifadhi\Incident\Controller\IncidentController;
 use Uhifadhi\Incident\Controller\IncidentKindsOverviewController;
 use Uhifadhi\Incident\Controller\IncidentListController;
+use Uhifadhi\Incident\Controller\IncidentOrgController;
 use Uhifadhi\Incident\Me\IncidentMyCards;
 use Uhifadhi\Incident\Repository\AreaListEntryRepository;
 use Uhifadhi\Incident\Repository\IncidentEventRepository;
@@ -46,6 +47,7 @@ use Uhifadhi\Incident\Service\IncidentListService;
 use Uhifadhi\Incident\Service\IncidentMapService;
 use Uhifadhi\Incident\Service\IncidentMoneyService;
 use Uhifadhi\Incident\Service\IncidentOrgFigures;
+use Uhifadhi\Incident\Service\IncidentOrgService;
 use Uhifadhi\Incident\Service\IncidentOverviewFigures;
 use Uhifadhi\Incident\Service\IncidentReportService;
 use Uhifadhi\Incident\Service\IncidentSettingsService;
@@ -384,6 +386,35 @@ return static function (ContainerConfigurator $container): void {
         ->public();
 
     $services->alias(IncidentKindsOverviewController::class, 'incident.controller.kinds_overview')->public();
+
+    /*
+     * INCIDENTS ONE SCOPE WIDER. The service counts nothing of its own: it
+     * resolves the areas a scope reaches that run this module, and folds what
+     * the area pages' own services answer. The authorization checker is null
+     * where the host runs no security, and then every area that runs the
+     * module is read.
+     */
+    $services->set('incident.org', IncidentOrgService::class)
+        ->args([
+            service(AreaOfInterestRepository::class),
+            service('registry.area_modules'),
+            service(IncidentRepository::class),
+            service(TaxonomyKindRepository::class),
+            service('incident.overview.figures'),
+            service('incident.kinds_overview'),
+            service('security.authorization_checker')->nullOnInvalid(),
+        ]);
+
+    $services->set('incident.controller.org', IncidentOrgController::class)
+        ->args([
+            service('twig'),
+            service('incident.org'),
+            service('shell.scopes'),
+            service('shell.table_page'),
+        ])
+        ->public();
+
+    $services->alias(IncidentOrgController::class, 'incident.controller.org')->public();
 
     /*
      * THE MODULE'S DATA PLACES. Tagged BY HAND: a reusable bundle does not

@@ -26,8 +26,8 @@ use Uhifadhi\Incident\Service\IncidentTransitionService;
  *    step is reached. Not rendered-and-disabled. Absent. These tests read the
  *    DOM, because "absent" is a claim about the document and nothing else can
  *    prove it.
- * 2. THE RAIL, NOT A DROPDOWN. Only the legal moves are offered, and the ones
- *    that are not are shown with the reason printed beside them.
+ * 2. THE JOURNEY, NOT A DROPDOWN. Only the legal move is offered, on the current
+ *    place's row, and the places ahead say what reaches them.
  */
 final class CaseFilePageTest extends FunctionalTestCase
 {
@@ -166,66 +166,95 @@ final class CaseFilePageTest extends FunctionalTestCase
     }
 
     /**
-     * ONLY THE LEGAL MOVES ARE OFFERED, and the illegal ones are shown as the
-     * reason they are illegal — never as a button that does nothing.
+     * THE JOURNEY, ONE CARD. The five places stand as a rail of rows: the ones
+     * reached say when and by whom, the current one carries the moves, and the
+     * ones ahead say what reaches them. The record draws no step bar.
      */
-    public function testOnlyTheLegalMovesAreOfferedAndTheRestSayWhyNot(): void
+    public function testTheJourneyIsOneCardOfFiveRows(): void
+    {
+        $area = $this->anAreaWithKinds();
+        $incident = $this->anIncident($area, 'natural-mortality', 'Wildebeest carcass, no injury pattern');
+        $at = new \DateTimeImmutable('2026-08-20 11:20:00');
+        $this->transitions()->apply($incident, IncidentTransitionEnum::Verify, $at, null, 'S. Laizer');
+        $this->transitions()->apply($incident, IncidentTransitionEnum::Respond, $at->modify('+1 day'), null, 'J. Mollel');
+        $this->em->flush();
+        $this->client->loginUser($this->aManager());
+
+        $crawler = $this->client->request('GET', \sprintf('/areas/%s/modules/incidents/%s', $this->uuidOf($area), $incident->getReference()));
+
+        self::assertCount(0, $crawler->filter('.i-wf'), 'The record draws no step bar.');
+        self::assertCount(0, $crawler->filter('.i-trans'), 'And no separate row of moves.');
+
+        self::assertCount(1, $crawler->filter('.i-jr'));
+        $card = $crawler->filter('.i-jr')->closest('.c');
+        self::assertNotNull($card);
+        self::assertSame('The journey· step 3 of 5 · in progress', $card->filter('.tab')->text());
+        self::assertStringContainsString('onpage', (string) $card->nextAll()->filter('div')->first()->attr('class'), 'The card sits where the bar was, above the index.');
+
+        $rows = $card->filter('.i-jr > .i-jr-s');
+        self::assertSame(
+            ['i-jr-s done', 'i-jr-s done', 'i-jr-s now', 'i-jr-s ahead', 'i-jr-s ahead'],
+            $rows->each(static fn (Crawler $row): ?string => $row->attr('class')),
+        );
+        self::assertSame(
+            ['Reported', 'Verified', 'In progress', 'Resolved', 'Closed'],
+            $rows->filter('.i-jr-n')->each(static fn (Crawler $n): string => $n->text()),
+        );
+        self::assertSame('step', $rows->eq(2)->attr('aria-current'));
+        self::assertStringContainsString('S. Laizer', $rows->eq(1)->filter('.i-jr-m')->text());
+        self::assertStringContainsString('since', $rows->eq(2)->filter('.i-jr-m')->text());
+        self::assertStringContainsString('J. Mollel', $rows->eq(2)->filter('.i-jr-m')->text());
+        self::assertSame('by itself, 30 days after resolved', $rows->eq(4)->filter('.i-jr-m')->text());
+
+        self::assertCount(1, $card->filter('.i-jr-acts'), 'The moves sit on the current row and nowhere else.');
+        self::assertCount(1, $rows->eq(2)->filter('.i-jr-acts form button.cta'));
+        self::assertSame('Mark resolved →', $rows->eq(2)->filter('.i-jr-acts .cta')->text());
+        self::assertCount(0, $card->filter('.i-jr-s.done a, .i-jr-s.done button, .i-jr-s.ahead a, .i-jr-s.ahead button'), 'A reached place is a record, never a control.');
+    }
+
+    /**
+     * ONLY THE LEGAL MOVE IS OFFERED, on the current row, and the place no
+     * person reaches says what reaches it instead of offering a button.
+     */
+    public function testFromReportedTheOneMoveIsVerifyAndClosingIsTheClocks(): void
     {
         $area = $this->anAreaWithKinds();
         $incident = $this->anIncident($area);
         $this->client->loginUser($this->aManager());
 
-        $crawler = $this->client->request('GET', \sprintf(
-            '/areas/%s/modules/incidents/%s',
-            $this->uuidOf($area),
-            $incident->getReference(),
-        ));
+        $crawler = $this->client->request('GET', \sprintf('/areas/%s/modules/incidents/%s', $this->uuidOf($area), $incident->getReference()));
 
-        // From `reported` there is exactly one move, and it is Verify.
-        $buttons = $crawler->filter('.i-trans form button');
+        $buttons = $crawler->filter('.i-jr-s.now .i-jr-acts form button');
         self::assertCount(1, $buttons);
-        self::assertStringContainsString('Verify', $buttons->text());
-
-        // And exactly ONE refusal is printed: the move no person may ever make.
-        // The rest are only "not that step's turn yet", which the rail above
-        // already says by drawing those steps as unreached.
-        $blocked = $crawler->filter('.i-trans .i-blocked');
-        self::assertCount(1, $blocked);
-        // The design's own words for it: "Close — only reachable from resolved".
-        self::assertStringContainsString('Close', $blocked->text());
-        self::assertStringContainsString('only reachable from resolved', $blocked->text());
+        self::assertSame('Verify →', $buttons->text());
+        self::assertSame('The journey· step 1 of 5 · reported', $crawler->filter('.i-jr')->closest('.c')?->filter('.tab')->text());
+        self::assertSame('by itself, 30 days after resolved', $crawler->filter('.i-jr-s.ahead')->last()->filter('.i-jr-m')->text());
     }
 
     /**
-     * …and once it IS resolved, the refusal changes to the real reason: the clock
-     * reaches `closed`, and no person ever does.
+     * A GUARD THAT REFUSES THE MOVE takes the button away, and the next place's
+     * condition is the sentence that says what is missing.
      */
-    public function testOnAResolvedIncidentTheRefusalIsTheClockItself(): void
+    public function testOutstandingCompensationLeavesNoResolveButtonAndSaysWhatResolves(): void
     {
         $area = $this->anAreaWithKinds();
-        $incident = $this->anIncident($area, 'natural-mortality', 'Wildebeest carcass, no injury pattern');
-        $at = new \DateTimeImmutable();
-        foreach ([IncidentTransitionEnum::Verify, IncidentTransitionEnum::Respond, IncidentTransitionEnum::Resolve] as $step) {
-            $this->transitions()->apply($incident, $step, $at = $at->modify('+1 hour'));
-        }
+        $incident = $this->anIncident($area, 'livestock-depredation');
+        $at = new \DateTimeImmutable('2026-08-20 11:20:00');
+        $this->transitions()->apply($incident, IncidentTransitionEnum::Verify, $at);
+        $this->transitions()->apply($incident, IncidentTransitionEnum::Respond, $at->modify('+1 hour'));
+        new IncidentMoney($incident, MoneyDirectionEnum::Compensation)->setClaimed(1_600_000)->setApproved(1_200_000);
         $this->em->flush();
         $this->client->loginUser($this->aManager());
 
-        $crawler = $this->client->request('GET', \sprintf(
-            '/areas/%s/modules/incidents/%s',
-            $this->uuidOf($area),
-            $incident->getReference(),
-        ));
+        $crawler = $this->client->request('GET', \sprintf('/areas/%s/modules/incidents/%s', $this->uuidOf($area), $incident->getReference()));
 
-        $blocked = $crawler->filter('.i-trans .i-blocked')->text();
-        self::assertStringContainsString('reached by time, not by a person', $blocked);
-        self::assertCount(0, $crawler->filter('.i-trans form button'), 'Nobody may close an incident by hand.');
+        self::assertCount(0, $crawler->filter('.i-jr-acts form button'));
+        self::assertSame('when the claimant is paid, or the money is waived', $crawler->filter('.i-jr-s.ahead')->first()->filter('.i-jr-m')->text());
     }
 
     /**
      * A RESOLVED INCIDENT SAYS WHEN IT WILL CLOSE ITSELF — the computed date, on
-     * the rail, as a hint and not a control. Closing is the clock's move; the case
-     * file's job is to tell the reader when, so nobody goes hunting for a button.
+     * the closed row, as a condition and not a control. Nobody may close by hand.
      */
     public function testAResolvedIncidentShowsItsAutomaticCloseDate(): void
     {
@@ -240,30 +269,26 @@ final class CaseFilePageTest extends FunctionalTestCase
 
         $crawler = $this->client->request('GET', \sprintf('/areas/%s/modules/incidents/%s', $this->uuidOf($area), $incident->getReference()));
 
-        // Resolved 21 aug 13:00, closes 30 days later — the rail prints that date.
         $expected = $incident->getResolvedAt()?->modify('+30 days')->format('j M Y');
         self::assertNotNull($expected);
-        $rail = $crawler->filter('.i-wf')->text();
-        self::assertStringContainsString('auto-closes '.$expected, $rail);
-        self::assertStringContainsString('closing is automatic', $rail);
+        $closed = $crawler->filter('.i-jr-s.ahead .i-jr-m')->text();
+        self::assertStringContainsString('by itself on '.$expected, $closed);
+        self::assertStringContainsString('30 days after resolved', $closed);
+        self::assertCount(0, $crawler->filter('.i-jr-acts form button'), 'Nobody may close an incident by hand.');
     }
 
-    /** Somebody without `incidents.manage` sees the rail and is offered no move at all. */
-    public function testAReporterSeesTheRailAndIsOfferedNoMoves(): void
+    /** Somebody without `incidents.manage` sees the journey and is offered no move at all. */
+    public function testAReporterSeesTheJourneyAndIsOfferedNoMoves(): void
     {
         $area = $this->anAreaWithKinds();
         $incident = $this->anIncident($area);
         $this->client->loginUser($this->aReporter());
 
-        $crawler = $this->client->request('GET', \sprintf(
-            '/areas/%s/modules/incidents/%s',
-            $this->uuidOf($area),
-            $incident->getReference(),
-        ));
+        $crawler = $this->client->request('GET', \sprintf('/areas/%s/modules/incidents/%s', $this->uuidOf($area), $incident->getReference()));
 
         self::assertResponseIsSuccessful();
-        self::assertCount(5, $crawler->filter('.i-wf .i-wfstep'), 'The rail always draws all five places.');
-        self::assertCount(0, $crawler->filter('.i-trans form button'));
+        self::assertCount(5, $crawler->filter('.i-jr .i-jr-s'), 'The journey always draws all five places.');
+        self::assertCount(0, $crawler->filter('.i-jr-acts form button'));
     }
 
     /**

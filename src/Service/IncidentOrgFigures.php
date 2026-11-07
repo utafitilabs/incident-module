@@ -16,6 +16,7 @@ namespace Uhifadhi\Incident\Service;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Uhifadhi\Contracts\Shell\Scope;
+use Uhifadhi\Incident\Controller\IncidentOrgController;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Model\IncidentOrgReading;
 use Uhifadhi\Incident\Repository\IncidentRepository;
@@ -91,11 +92,9 @@ final class IncidentOrgFigures
      * — because that is where a register is edited and a case is opened. So a
      * reading whose open work is all in ONE area has one register behind it and
      * the door goes there, which is exactly what the design draws. A reading
-     * spanning several areas has no single page, and the door goes to the areas
-     * register rather than picking one area's and calling it everybody's.
-     *
-     * AN ORGANIZATION-LEVEL INCIDENTS PAGE IS RULED AND NOT BUILT. When this
-     * module ships one, this is the one method that changes.
+     * spanning several areas goes to the organization register, which is every
+     * area's register one scope wider, rather than picking one area's and
+     * calling it everybody's.
      *
      * @param list<Incident> $open
      */
@@ -106,9 +105,9 @@ final class IncidentOrgFigures
         try {
             return 1 === \count($areas)
                 ? $this->router->generate('incident_dashboard', ['uuid' => $areas[0]])
-                : $this->router->generate('area_index');
+                : $this->router->generate(IncidentOrgController::LIST_ROUTE);
         } catch (RouteNotFoundException) {
-            // An installation that has not mounted the areas register still
+            // An installation that has not mounted the organization register still
             // draws the card; a door to nowhere would take the dashboard down
             // with it.
             return null;

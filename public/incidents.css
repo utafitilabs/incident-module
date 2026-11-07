@@ -533,7 +533,7 @@
 .i-card.ghost{opacity:.5;border-style:dashed;cursor:default}
 /* The overflow ghost's "… and N more this month" line (the design set it inline). */
 .i-card.ghost .i-cardmore{margin:0;color:var(--dim)}
-/* the state-machine rail on E's detail page */
+/* the state-machine rail of the dashboard's "where things stand" widget */
 .i-wf{display:flex;align-items:stretch;gap:0;border:1px solid var(--ln2);border-radius:13px;overflow:hidden;
   background:linear-gradient(180deg,var(--p1),var(--p2))}
 .i-wfstep{flex:1;min-width:0;padding:14px 16px;border-right:1px solid var(--ln);position:relative}
@@ -560,6 +560,37 @@
 .i-blocked{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:9.5px;color:var(--dim);
   display:inline-flex;align-items:center;gap:7px}
 .i-blocked svg{width:12px;height:12px;flex:none}
+/* THE JOURNEY. The five places as a vertical rail in one card: a reached place
+   is text on the line, never a control: its row takes the house row tint on
+   hover and nothing else, the current row carries it at rest, the places ahead
+   are muted, and the legal transitions sit at the right end of the current place's
+   row — the primary one last, as the house .cta. */
+.i-jr{display:flex;flex-direction:column;margin-top:4px}
+.i-jr-s{display:grid;grid-template-columns:11px minmax(0,1fr);column-gap:14px;padding:10px 16px;margin:0 -16px;
+  position:relative;border-radius:6px}
+.i-jr-s:hover{background:color-mix(in srgb,var(--acc) 4%,transparent)}
+.i-jr-s.now,.i-jr-s.now:hover{background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.i-jr-s::before{content:"";position:absolute;left:21px;top:24px;bottom:-12px;border-left:1px dashed var(--ln2)}
+.i-jr-s.done::before{border-left:1px solid color-mix(in srgb,var(--fog) 55%,transparent)}
+.i-jr-s.now::before{border-left:1px dashed var(--acc)}
+.i-jr-s:last-child::before{display:none}
+.i-jr-s.now{grid-template-columns:11px minmax(0,1fr) auto}
+.i-jr-dot{position:relative;z-index:1;width:11px;height:11px;border-radius:50%;box-sizing:border-box;margin-top:2px;
+  background:var(--cv);border:1.5px dashed var(--ln2)}
+.i-jr-s.done .i-jr-dot{background:var(--fog);border:1.5px solid var(--fog)}
+.i-jr-s.now .i-jr-dot{background:var(--acc);border:1.5px solid var(--acc);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 18%,transparent)}
+.i-jr-t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.i-jr-n{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:9.5px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--fog)}
+.i-jr-m{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;font-weight:400;color:var(--fog);line-height:1.5}
+.i-jr-s.now .i-jr-n{color:var(--tx)}
+.i-jr-s.ahead .i-jr-n,.i-jr-s.ahead .i-jr-m{color:var(--dim)}
+.i-jr-acts{display:flex;align-items:center;justify-content:flex-end;gap:8px;align-self:center}
+@media (max-width:760px){
+  .i-jr-s.now{grid-template-columns:11px minmax(0,1fr)}
+  .i-jr-acts{grid-column:2;margin-top:8px;flex-wrap:wrap;justify-content:flex-start}
+}
 
 /* ── KEY / VALUE ROW ──────────────────────────────────────────────────────
    The meta card's row: a mono label on the left, the fact on the right. The
@@ -866,8 +897,8 @@
 
 /* The case file's header chips and the small slots the design set inline. */
 .i-headchips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
-/* The gap the design leaves between the transition row and the case file's index. */
-.i-trans~.onpage{margin-top:22px}
+/* The gap the design leaves between the journey card and the case file's index. */
+.c:has(>.i-jr)~.onpage{margin-top:24px}
 .i-step-now{border-color:color-mix(in srgb,var(--acc) 40%,transparent)}
 .i-moneywhy{font-size:11.5px;margin-bottom:0}
 .i-partynote{font-size:11.5px}

@@ -41,7 +41,7 @@ final class ModuleRegistrationTest extends KernelTestCase
         self::assertArrayHasKey('incidents', $modules);
         self::assertInstanceOf(IncidentModuleProvider::class, $modules['incidents']);
         self::assertSame('Incidents', $modules['incidents']->name());
-        self::assertSame('triangle-alert', $modules['incidents']->icon());
+        self::assertSame('incident:triangle-alert', $modules['incidents']->icon());
         // It owns its screens, so the host's tile links straight to them.
         self::assertSame('incident_dashboard', $modules['incidents']->entryRoute());
     }

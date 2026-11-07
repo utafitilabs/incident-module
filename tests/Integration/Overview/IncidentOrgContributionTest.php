@@ -175,17 +175,18 @@ final class IncidentOrgContributionTest extends IntegrationTestCase
 
     /**
      * THE DOOR IS HONEST ABOUT WHAT THIS INSTALLATION HAS. Open work in
-     * several areas has no one register behind it, so the door goes to the
-     * areas register rather than picking an area and calling it everybody's.
+     * several areas has no one area register behind it, so the door goes to
+     * the organization register rather than picking an area and calling it
+     * everybody's.
      */
-    public function testTheDoorLeadsToTheAreasRegisterWhenTheWorkSpansAreas(): void
+    public function testTheDoorLeadsToTheOrganizationRegisterWhenTheWorkSpansAreas(): void
     {
         $this->twoAreasWithOpenWork();
 
         $reading = $this->reading();
 
         self::assertSame('Every area', $reading->doorLabel);
-        self::assertSame('/areas', $reading->doorUrl);
+        self::assertSame('/incidents/list', $reading->doorUrl);
     }
 
     /** One area's worth of open work has one register behind it, and the door goes there. */

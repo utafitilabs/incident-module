@@ -15,6 +15,9 @@ namespace Uhifadhi\Incident\Module;
 
 use Uhifadhi\Contracts\ModuleProviderInterface;
 use Uhifadhi\Contracts\ModuleProviderTrait;
+use Uhifadhi\Contracts\Shell\OrgPage;
+use Uhifadhi\Contracts\Shell\OrgPagesInterface;
+use Uhifadhi\Incident\Controller\IncidentOrgController;
 
 /**
  * Declares the one module this bundle contributes — "Incidents": what happened
@@ -22,8 +25,12 @@ use Uhifadhi\Contracts\ModuleProviderTrait;
  *
  * It owns its screens ({@see entryRoute()}), so the host links straight to the
  * incidents dashboard rather than rendering the module through its generic page.
+ *
+ * It answers at organization level too ({@see orgPages()}): the same three
+ * screens as an area's, read across every area the module is switched on in,
+ * mounted by the shell beside the sidebar's other organization readings.
  */
-final class IncidentModuleProvider implements ModuleProviderInterface
+final class IncidentModuleProvider implements ModuleProviderInterface, OrgPagesInterface
 {
     use ModuleProviderTrait;
 
@@ -70,7 +77,7 @@ final class IncidentModuleProvider implements ModuleProviderInterface
 
     public function icon(): string
     {
-        return 'triangle-alert';
+        return 'incident:triangle-alert';
     }
 
     public function entryRoute(): string
@@ -84,4 +91,17 @@ final class IncidentModuleProvider implements ModuleProviderInterface
      * with the verbs something here actually enforces:
      * {@see \Uhifadhi\Incident\Access\IncidentConcerns}.
      */
+
+    /**
+     * THE AREA MODULE'S OWN TABS, ONE SCOPE WIDER — the same labels in the same
+     * order, so a reader who has learnt the module in an area has learnt it here.
+     */
+    public function orgPages(): array
+    {
+        return [
+            new OrgPage('overview', 'Overview', IncidentOrgController::OVERVIEW_ROUTE),
+            new OrgPage('incidents', 'Incidents', IncidentOrgController::LIST_ROUTE),
+            new OrgPage('kinds', 'Incident kinds', IncidentOrgController::KINDS_ROUTE),
+        ];
+    }
 }

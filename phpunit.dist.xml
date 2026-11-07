@@ -8,6 +8,13 @@
          failOnNotice="true"
          failOnWarning="true">
     <php>
+        <!--
+            The suite states the memory it needs rather than inheriting whatever
+            a developer's php.ini happens to say. Every functional test boots a
+            debug kernel, which collects every query of every request, so one
+            process running the whole suite accumulates.
+        -->
+        <ini name="memory_limit" value="-1"/>
         <env name="KERNEL_CLASS" value="Uhifadhi\Incident\Tests\Integration\TestKernel"/>
         <!--
             A REAL PostGIS database. The integration and functional suites rebuild

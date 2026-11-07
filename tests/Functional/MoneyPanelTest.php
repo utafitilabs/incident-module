@@ -235,7 +235,7 @@ final class MoneyPanelTest extends FunctionalTestCase
         self::assertResponseRedirects();
 
         $crawler = $this->client->request('GET', \sprintf('/areas/%s/modules/incidents/%s', $this->uuidOf($area), $incident->getReference()));
-        $moves = $crawler->filter('.i-trans form button')->each(static fn ($b) => $b->text());
+        $moves = $crawler->filter('.i-jr-s.now .i-jr-acts form button')->each(static fn ($b) => $b->text());
         self::assertNotEmpty(
             array_filter($moves, static fn (string $m) => str_contains($m, 'Mark resolved')),
             'Once the money is settled, Resolve is offered.',

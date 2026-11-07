@@ -1,0 +1,132 @@
+{# EVERY INCIDENT, EVERY AREA — the area register with one column added.
+
+   WHICH AREA IS THAT COLUMN, and it is the only thing this scope adds: the
+   rows are each area's own filtered query, folded by IncidentOrgService.
+
+   THE BAR IS THE HOUSE BAR: the shell's `.lfilt` row of grouped dropdown
+   chips (`details.i-dd`) and its `.lsearch`, every option a real link
+   carrying the whole question, so a narrowed list is an address somebody can
+   send. The area chip writes the shell's own scope parameter. The counts are
+   the counts under the month and the search.
+
+   THE FOOT IS THE SHELL'S, under the table even at one page. #}
+{% extends '@UhifadhiIncident/org/base.html.twig' %}
+{% import '@UhifadhiIncident/dashboard/_ui.html.twig' as ui %}
+
+{% block title %}Incidents · all incidents · {{ scope.label }}{% endblock %}
+
+{% block shell_page_subtitle %}Every area, newest first. Scope narrows the list.{% endblock %}
+
+{% macro option(query, key, value, label, count, on, cat) %}
+    <a class="i-ddopt{{ on ? ' on' }}" href="{{ path(constant('Uhifadhi\\Incident\\Controller\\IncidentOrgController::LIST_ROUTE'), query.with(key, value)) }}">
+        {%- if cat is not null %}<span class="i-dot" data-cat="{{ cat }}"></span>{% endif -%}
+        <span class="i-ddopt-l">{{ label }}</span>
+        {%- if count is not null %}<span class="i-ddopt-n">{{ count }}</span>{% endif -%}
+    </a>
+{% endmacro %}
+
+{% block incident_org_page %}
+{%- set here = constant('Uhifadhi\\Incident\\Controller\\IncidentOrgController::LIST_ROUTE') -%}
+<div class="c">
+    <span class="tab">Incidents<span class="src">&middot; {{ query.from|date('F')|lower }} &middot; {{ register.rows|length }}</span></span>
+
+    <form class="lfilt" method="get" action="{{ path(here) }}" role="search">
+        {% for key, value in query.toQuery %}{% if key != 'q' %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
+
+        {# AREA — a dropdown and never a chip per area: it holds two areas and forty the same way. #}
+        {%- set chosenArea = register.areas|filter(a => a.area.uuid == query.area)|first -%}
+        <details class="i-dd" data-axis="area">
+            <summary class="mchip i-ddt{{ query.area ? ' on' }}"><span class="i-ddval">{{ chosenArea ? chosenArea.area.name : 'all areas' }}</span><span class="i-ddcaret">&#9662;</span></summary>
+            <div class="i-ddmenu" aria-label="Filter by area">
+                <span class="i-ddhead">area</span>
+                {{ _self.option(query, 'area', null, 'All areas', register.filed, query.area is null, null) }}
+                <span class="i-ddsep"></span>
+                {% for one in register.areas %}
+                    {{ _self.option(query, 'area', one.area.uuid, one.area.name, one.count, query.area == one.area.uuid, null) }}
+                {% endfor %}
+            </div>
+        </details>
+
+        {# CATEGORY — the organization's one taxonomy, each word with its hue and its count. #}
+        <details class="i-dd" data-axis="category">
+            <summary class="mchip i-ddt{{ query.category ? ' on' }}"><span class="i-ddval">{{ query.category ? (register.categories[query.category].label ?? query.category)|lower : 'all categories' }}</span><span class="i-ddcaret">&#9662;</span></summary>
+            <div class="i-ddmenu" aria-label="Filter by category">
+                <span class="i-ddhead">category</span>
+                {{ _self.option(query, 'category', null, 'All categories', register.filed, query.category is null, '') }}
+                {% if register.categories is not empty %}<span class="i-ddsep"></span>{% endif %}
+                {% for code, word in register.categories %}
+                    {{ _self.option(query, 'category', code, word.label|lower, word.count, query.category == code, word.catIndex) }}
+                {% endfor %}
+            </div>
+        </details>
+
+        {# STATUS — where an incident is in its workflow. #}
+        <details class="i-dd" data-axis="status">
+            <summary class="mchip i-ddt{{ query.status ? ' on' }}"><span class="i-ddval">{{ query.status ? query.status.label : 'all statuses' }}</span><span class="i-ddcaret">&#9662;</span></summary>
+            <div class="i-ddmenu" aria-label="Filter by status">
+                <span class="i-ddhead">status</span>
+                {{ _self.option(query, 'status', null, 'All statuses', null, query.status is null, null) }}
+                <span class="i-ddsep"></span>
+                {% for place in statuses %}
+                    {{ _self.option(query, 'status', place.value, place.label, null, query.status == place, null) }}
+                {% endfor %}
+            </div>
+        </details>
+
+        {# MONTH — this month and the five before it, anchored to the first so none is skipped. #}
+        <details class="i-dd" data-axis="month">
+            <summary class="mchip i-ddt on"><span class="i-ddval">{{ query.from|date('F Y')|lower }}</span><span class="i-ddcaret">&#9662;</span></summary>
+            <div class="i-ddmenu" aria-label="Choose month">
+                <span class="i-ddhead">month</span>
+                {% set anchor = now|date_modify('first day of this month') %}
+                {% for i in 0..5 %}
+                    {% set m = anchor|date_modify('-' ~ i ~ ' months') %}
+                    {{ _self.option(query, 'month', m|date('Y-m'), m|date('F Y')|lower, null, query.from|date('Y-m') == m|date('Y-m'), null) }}
+                {% endfor %}
+            </div>
+        </details>
+
+        {# DEPARTMENT — the kinds a department leads, in every area. #}
+        <details class="i-dd" data-axis="department">
+            <summary class="mchip i-ddt{{ query.department ? ' on' }}"><span class="i-ddval">{{ query.department ?? 'all departments' }}</span><span class="i-ddcaret">&#9662;</span></summary>
+            <div class="i-ddmenu" aria-label="Filter by department">
+                <span class="i-ddhead">department</span>
+                {{ _self.option(query, 'department', null, 'All departments', register.filed, query.department is null, null) }}
+                {% if register.departments is not empty %}<span class="i-ddsep"></span>{% endif %}
+                {% for name, count in register.departments %}
+                    {{ _self.option(query, 'department', name, name, count, query.department == name, null) }}
+                {% endfor %}
+            </div>
+        </details>
+
+        <span class="lsearch">
+            {{ ux_icon('shell:search') }}
+            <input class="fld" type="search" name="q" value="{{ query.search }}" placeholder="Search incidents&hellip;" autocomplete="off" aria-label="Search incidents">
+        </span>
+    </form>
+
+    <table class="tbl">
+        <thead><tr><th>id</th><th>area</th><th>category</th><th>what happened</th><th>status</th><th>severity</th><th class="num">money</th><th>reported</th><th></th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            {%- set incident = row.incident -%}
+            {%- set open = path('incident_show', {uuid: row.area.uuid, reference: incident.reference}) -%}
+            <tr>
+                <td>{{ ui.id(incident.reference) }}</td>
+                <td><span class="orgarea" data-cat="{{ row.area.position }}"><i></i>{{ row.area.name }}</span></td>
+                <td>{{ ui.cat(incident.kind, incident.subcategory.label) }}</td>
+                <td>{{ incident.headline }}<span class="sub">{{ incident.sourceRecordLabel ?? incident.source.badge }}</span></td>
+                <td>{{ ui.status(incident.status) }}</td>
+                <td>{{ ui.severity(incident.severity) }}</td>
+                <td class="num">{{ ui.moneyTag(incident) }}</td>
+                <td>{{ ui.when(incident.reportedAt, now) }}</td>
+                <td class="door"><a class="open-btn" href="{{ open }}">Open &rarr;</a></td>
+            </tr>
+        {% else %}
+            <tr><td colspan="9" class="use">{{ query.isNarrowed ? 'Nothing matches this filter. That is a fact about the question, not about the areas.' : 'Nothing filed in this window, in any area.' }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {{ include('@Shell/_foot.html.twig', {count: table.total, noun: 'incidents', one: 'incident', perPage: table.size, page: table.page, pages: table.pages, links: links}, with_context: false) }}
+</div>
+{% endblock %}

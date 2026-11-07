@@ -33,7 +33,7 @@ final class IncidentModuleProviderTest extends TestCase
         self::assertSame('Incidents', $provider->name());
         self::assertSame('operations', $provider->category());
         self::assertSame('Field incident reports', $provider->dataSource());
-        self::assertSame('triangle-alert', $provider->icon());
+        self::assertSame('incident:triangle-alert', $provider->icon());
     }
 
     public function testCategoryIsDeploymentConfigured(): void

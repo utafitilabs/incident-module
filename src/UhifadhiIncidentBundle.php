@@ -258,7 +258,10 @@ final class UhifadhiIncidentBundle extends AbstractBundle
         $category = \is_string($config['module_category'] ?? null) ? $config['module_category'] : 'operations';
         $services->set('incident.module_provider', IncidentModuleProvider::class)
             ->args([$category])
-            ->tag('uhifadhi.module');
+            ->tag('uhifadhi.module')
+            // AND IT ANSWERS AT ORGANIZATION LEVEL TOO: the same provider names
+            // the screens the shell mounts once across every area.
+            ->tag('shell.org_pages');
 
         /*
          * WHAT THERE IS TO HAVE A PERMISSION ABOUT HERE. Declared through the

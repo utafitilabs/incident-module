@@ -1,0 +1,86 @@
+{# THE ORGANIZATION'S TAXONOMY — every word down the left, who files against
+   the chosen one on the right.
+
+   READ-ONLY, ON PURPOSE. A word is edited where it is configured, per area,
+   so every row carries the door to that area's kinds editor; an editor over
+   every area's vocabulary would be many writes behind one button.
+
+   THE FIGURES ARE EACH AREA'S OWN KINDS PAGE, folded by the wire-code the
+   areas share. Each word is its own address, so switching words is a GET.
+
+   THE TABLE IS THE HOUSE TABLE with the house bar above it and the foot
+   under it. #}
+{% extends '@UhifadhiIncident/org/base.html.twig' %}
+
+{% block title %}Incident kinds · {{ scope.label }}{% endblock %}
+
+{% block shell_page_title %}Incident kinds{% endblock %}
+
+{% block shell_page_subtitle %}One taxonomy. Who files against each word, and how much.{% endblock %}
+
+{% macro option(chosen, key, value, label, on) %}
+    {%- set query = chosen|filter((v, k) => k != key) -%}
+    {%- if value is not null %}{% set query = query|merge({(key): value}) %}{% endif -%}
+    <a class="i-ddopt{{ on ? ' on' }}" href="{{ path(constant('Uhifadhi\\Incident\\Controller\\IncidentOrgController::KINDS_ROUTE'), query) }}"><span class="i-ddopt-l">{{ label }}</span></a>
+{% endmacro %}
+
+{% block incident_org_page %}
+{%- set here = constant('Uhifadhi\\Incident\\Controller\\IncidentOrgController::KINDS_ROUTE') -%}
+{%- set place = scope.areaUuid ? {area: scope.areaUuid} : {} -%}
+<div class="kpane">
+    <div class="l" role="list" aria-label="Kinds">
+        <div class="kpane-hd">kinds<span class="n">{{ kinds.activeCount }}{% if kinds.retiredCount %} &middot; {{ kinds.retiredCount }} retired{% endif %}</span></div>
+        {% for kind in kinds.kinds %}
+            <a class="krow{{ kinds.selected is same as(kind) ? ' on' }}{{ kind.retired ? ' gone' }}" role="listitem" href="{{ path(here, place|merge({kind: kind.code})) }}">
+                <i class="dot" data-cat="{{ kind.catIndex }}"></i>
+                <span class="nm">{{ kind.label }}<em>{{ kind.code }}{{ kind.retired ? ' · retired in ' ~ kind.retiredIn }}</em></span>
+                <span class="n">{{ kind.inUse ? kind.thisMonth : '—' }}<em>this month</em></span>
+                <span class="n" style="min-width:36px">{{ kind.inUse }}<em>areas</em></span>
+            </a>
+        {% else %}
+            <span class="krow gone"><span class="nm">No area has written its kinds yet.</span></span>
+        {% endfor %}
+    </div>
+    <div class="r">
+        {% if kinds.selected %}
+            <form class="lfilt" method="get" action="{{ path(here) }}" role="search">
+                {% for key, value in chosen %}{% if key != 'q' %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
+                {%- set use = chosen.use ?? null -%}
+                <details class="i-dd" data-axis="use">
+                    <summary class="mchip i-ddt{{ use in ['active', 'retired'] ? ' on' }}"><span class="i-ddval">{{ use == 'active' ? 'in use' : (use == 'retired' ? 'retired' : 'in use or retired') }}</span><span class="i-ddcaret">&#9662;</span></summary>
+                    <div class="i-ddmenu" aria-label="Filter by use">
+                        <span class="i-ddhead">use</span>
+                        {{ _self.option(chosen, 'use', null, 'In use or retired', use not in ['active', 'retired']) }}
+                        <span class="i-ddsep"></span>
+                        {{ _self.option(chosen, 'use', 'active', 'In use', use == 'active') }}
+                        {{ _self.option(chosen, 'use', 'retired', 'Retired', use == 'retired') }}
+                    </div>
+                </details>
+                <span class="lsearch">
+                    {{ ux_icon('shell:search') }}
+                    <input class="fld" type="search" name="q" value="{{ chosen.q ?? '' }}" placeholder="Search areas&hellip;" autocomplete="off" aria-label="Search areas">
+                </span>
+            </form>
+
+            <table class="tbl">
+                <thead><tr><th>Area</th><th class="num">This month</th><th class="num">Last month</th><th class="num">All time</th><th class="num">Sub-categories</th><th></th></tr></thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td><span class="orgarea" data-cat="{{ row.area.position }}"><i></i>{{ row.area.name }}</span>{% if not row.figures.active %}<span class="sub">retired here</span>{% endif %}</td>
+                        <td class="num">{{ row.figures.thisMonth }}</td>
+                        <td class="num">{{ row.figures.lastMonth }}</td>
+                        <td class="num">{{ row.figures.allTime }}</td>
+                        <td class="num">{{ row.figures.subcategoryCount }}</td>
+                        <td class="door"><a class="open-btn" href="{{ path('incident_kinds', {uuid: row.area.uuid}) }}">Configure &rarr;</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="use">No area matches.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {{ include('@Shell/_foot.html.twig', {count: table.total, noun: 'areas', one: 'area', perPage: table.size, page: table.page, pages: table.pages, links: links}, with_context: false) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

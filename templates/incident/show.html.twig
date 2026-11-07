@@ -3,11 +3,10 @@
 
    TWO CONTRACTS THE DESIGN INSISTS ON, and both are structural here:
 
-   1. THE RAIL, NOT A DROPDOWN. A status is never a select box. The rail shows
-      where the incident is, what it passed and what is left, and only the LEGAL
-      transitions are offered — with the refusal printed beside the ones it
-      cannot make. It is the same partial the dashboard's "where things stand"
-      widget renders: identical component, identical markup.
+   1. THE JOURNEY, NOT A DROPDOWN. A status is never a select box. The journey
+      card shows where the incident is, what it passed and when, and what
+      reaches each place still ahead; only the LEGAL transitions are offered,
+      on the current place's row.
 
    2. GATED PANELS. A step owns a panel, and the panel DOES NOT EXIST until the
       step is reached. Not rendered-and-disabled — absent. There is no empty
@@ -76,12 +75,51 @@
         {{ ui.zone(incident) }}
     </div>
 
-    {{ include('@UhifadhiIncident/dashboard/_rail.html.twig', {
-        area: area,
-        rail: rail,
-        canManage: door('incidents.manage', area),
-        csrfToken: csrfToken,
-    }, with_context: false) }}
+    {# THE JOURNEY: the five places as a rail in one card. A reached place is a
+       record of when and by whom, never a control; a place ahead states what
+       reaches it; only the legal moves are offered, on the current place's row,
+       the primary one last. "Closed" is the clock's, so it never has a button.
+       → the moves come from IncidentTransitionService::available();
+         POST /areas/{uuid}/modules/incidents/{reference}/transition/{name} #}
+    {% set canManage = door('incidents.manage', area) %}
+    <div class="c">
+        <span class="tab">The journey<span class="src">· step {{ incident.status.step }} of {{ rail.steps|length }} · {{ incident.status.label }}</span></span>
+        <div class="i-jr" role="list" aria-label="Where this incident stands">
+            {% for step in rail.steps %}
+                {% set place = step.place %}
+                {% set state = step.state == 'todo' ? 'ahead' : step.state %}
+                {% set reaching = place.value == 'reported' ? incident.events|first : incident.events|filter(e => e.toStatus is same as(place))|last %}
+                {% set reachedBy = reaching ? reaching.actorName : null %}
+                <div class="i-jr-s {{ state }}" role="listitem"{% if state == 'now' %} aria-current="step"{% endif %}>
+                    <i class="i-jr-dot"></i>
+                    <div class="i-jr-t">
+                        <span class="i-jr-n">{{ place.label|capitalize }}</span>
+                        <span class="i-jr-m">
+                            {%- if state != 'ahead' and step.at %}{% if state == 'now' %}since {% endif %}<time datetime="{{ step.at|date('c') }}" data-localtime-format="daystamp">{{ step.at|date('D j M H:i')|lower }}</time>{% if reachedBy %} · {{ reachedBy }}{% endif %}
+                            {%- elseif place.value == 'verified' %}when somebody competent has looked at it
+                            {%- elseif place.value == 'in_progress' %}when the response starts
+                            {%- elseif place.value == 'resolved' and money and money.direction.value == 'compensation' %}when the claimant is paid, or the money is waived
+                            {%- elseif place.value == 'resolved' and money %}when the fine is collected, or the money is waived
+                            {%- elseif place.value == 'resolved' %}when the work is done
+                            {%- elseif place.value == 'closed' and rail.closesAt %}by itself on <time datetime="{{ rail.closesAt|date('c') }}" data-localtime-format="day">{{ rail.closesAt|date('j M Y') }}</time>, {{ constant('Uhifadhi\\Incident\\Workflow\\IncidentWorkflow::CLOSE_AFTER_DAYS') }} days after resolved
+                            {%- elseif place.value == 'closed' %}by itself, {{ constant('Uhifadhi\\Incident\\Workflow\\IncidentWorkflow::CLOSE_AFTER_DAYS') }} days after resolved
+                            {%- endif -%}
+                        </span>
+                    </div>
+                    {% if state == 'now' and canManage and rail.available is not empty %}
+                        <div class="i-jr-acts">
+                            {% for transition in rail.available|reverse %}
+                                <form method="post" class="i-transform" action="{{ path('incident_transition', {uuid: area.uuid, reference: incident.reference, transition: transition.value}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrfToken }}">
+                                    <button type="submit" class="{{ loop.last ? 'cta' : 'tgl' }}">{{ transition.label }}{{ loop.last ? ' →' }}</button>
+                                </form>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 
     {% set seesCaseFile = door('case-files.read', area) %}
     {% set seesMoney = door('case-money.read', area) %}

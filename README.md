@@ -64,6 +64,18 @@ The bundle registers via Flex (`"type": "symfony-bundle"`), which adds
 
 A module is installed but **parked**: every page of it answers 404 in an area that has not taken it. An administrator switches it on per area from that area's module grid, and grants the module's permissions to the positions that need them from the positions screen. Reading needs the module's `read` grant, held by somebody placed at the area who has a department and, where departments run incidents, belongs to or supports one of them; a person with no department reaches no incident. Who may change somebody else's incident is shown on Team › Permissions (`docs/permissions.md`).
 
+### The organization pages
+
+Beside every area's own pages, the module answers once across all of them: the shell mounts its three organization screens as the *Incidents* row under Observatory and draws their tab strip and scope control. Each is the area page with the area filter widened, read over the areas that run the module and whose register the reader may open; gated on `areas.read`, like the other organization readings.
+
+| Route | Path | What it is |
+|---|---|---|
+| `incident_org_dashboard` | `/incidents` | Overview: the strip across every area, and open work past its term as the banner |
+| `incident_org_list` | `/incidents/list` | Incidents: every area's register in one table, the area as a column |
+| `incident_org_kinds` | `/incidents/kinds` | Incident kinds: one taxonomy, and which area files against each word |
+
+The addresses are the installation's: they arrive with the module's controller routes, so an installation that imports `@UhifadhiIncidentBundle/src/Controller/` has them and adds no `controllers.json` entry for them.
+
 ## Getting started
 
 Then, in the host:

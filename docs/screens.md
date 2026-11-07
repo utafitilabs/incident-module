@@ -3,6 +3,7 @@
 ## Contents
 
 - [The routes](#the-routes)
+- [The organization pages](#the-organization-pages)
 - [The module frame](#the-module-frame)
 - [Parking closes every one of them](#parking-closes-every-one-of-them)
 - [The five directions are presets, not pages](#the-five-directions-are-presets-not-pages)
@@ -24,11 +25,29 @@ All under `/areas/{uuid}/modules/incidents`, the same shape as patrols.
 | `incident_settings_save` | `/configure/settings` (POST) | Saves the module's per-area settings. |
 | `incident_new` | `/new` | The report flow, as its own page. |
 | `incident_create` | `` (POST) | Files it. |
-| `incident_show` | `/{reference}` | One case file: the facts strip, the rail, then the index ("On this page") over one column — Where, Narrative, Timeline, Evidence, Money, Involved parties, Provenance & links, and under the head *The steps* a row per step reached and the category's fields. A card the reader may not see has no row. |
+| `incident_show` | `/{reference}` | One case file: the facts strip, the journey card (the five places down a rail: reached ones with when and by whom, the current one with its moves at the right, the ones ahead with what reaches them), then the index ("On this page") over one column — Where, Narrative, Timeline, Evidence, Money, Involved parties, Provenance & links, and under the head *The steps* a row per step reached and the category's fields. A card the reader may not see has no row. |
 | `incident_transition` | `/{reference}/transition/{name}` (POST) | Moves it on. Both the case file's buttons and the status board's drag-and-drop post here. |
 
 Plus the eight widget-library write endpoints the shell's `WidgetEndpoint`
 answers (`/widgets/save`, `/widgets/reset`, `/widgets/preset/{id}`, …).
+
+## The organization pages
+
+The same three tabs one scope wider, at the root rather than under an area:
+
+| Route | Path | What it is |
+|---|---|---|
+| `incident_org_dashboard` | `/incidents` | Overview: the strip — areas running the module and how many filed this month, filed this month, in progress and across how many areas, critical open by area — and open work past its own term as the shell's banner, with a door to the register. |
+| `incident_org_list` | `/incidents/list` | Incidents: every area's filtered register in one `table.tbl`, newest first, the area as a column by its place in the declared order. The bar is the house `.lfilt` — area, category, status, month, department and the search — every option a link; the area chip writes the shell's own `?area=`. The counts are under the month and the search, over every area the reader may open. The shell's foot pages it. Open goes to the area's case file. |
+| `incident_org_kinds` | `/incidents/kinds` | Incident kinds: the wire-codes the areas share down the left (`?kind=`), and for the chosen word each area's this month, last month, all time and sub-categories, with a door to that area's kinds editor. Read-only. The bar narrows the areas by use (`?use=active` or `retired`) and by name (`?q=`), and the foot pages them. A word retired in some area says in how many. |
+
+**Every figure is the area reading added.** `IncidentOrgService` resolves the
+areas a scope reaches — the shell's `Scopes`, then the areas that run the module
+(the registry's ledger) and whose register the reader may open
+(`incidents.read` on that area) — and asks each what the area page asks: the
+overview figures, the one filtered query, the kinds page's figures. The routes
+carry the module marker and no area, so the parking gate has nothing to close;
+a parked area is simply not read.
 
 ## The module frame
 
