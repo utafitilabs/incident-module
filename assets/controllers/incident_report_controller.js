@@ -37,12 +37,15 @@ export default class extends Controller {
         // The rail beside the form: one card per sub-category, plus the card that
         // stands in while nothing is chosen.
         'asks', 'asksEmpty', 'progress',
+        // A point the area refused, owed until the point is moved.
+        'refusedPoint',
     ];
 
     /** The attribute a rail row carries the gate's own missing-answer label on. */
     static NEED = 'data-incident-report-need';
 
     connect() {
+        this.refusedAt = `${this.answer('[name="lat"]')},${this.answer('[name="lng"]')}`;
         this.gate();
         // A note copied in from an observation is routinely two lines long, so
         // the box is the size of its answer from the first paint — not after the
@@ -138,6 +141,11 @@ export default class extends Controller {
             missing.push('mark where it happened');
         }
         missing.push(...this.blocksMissing());
+        // THE SERVER JUDGES THE POINT AGAIN on the next filing; until the point
+        // moves, the refusal it gave stands.
+        if (this.hasRefusedPointTarget && this.refusedAt === `${this.answer('[name="lat"]')},${this.answer('[name="lng"]')}`) {
+            missing.push(this.refusedPointTarget.dataset.need);
+        }
 
         if (this.hasFileTarget) {
             this.fileTarget.disabled = 0 !== missing.length;

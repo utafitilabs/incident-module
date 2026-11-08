@@ -506,6 +506,7 @@ final class UhifadhiIncidentBundle extends AbstractBundle
                     service(TaxonomySubcategoryRepository::class),
                     service('security.csrf.token_manager'),
                     service('security.token_storage'),
+                    service('incident.placement'),
                 ])
                 ->public();
             $services->alias(IncidentReportController::class, 'incident.controller.report')->public();

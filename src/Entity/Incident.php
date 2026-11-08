@@ -127,6 +127,14 @@ class Incident
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Zone $zone = null;
 
+    /**
+     * Whether the point was outside the area's boundary when it was filed, by
+     * more than the area's "Inside if within". Judged once, at filing, as the
+     * zone is.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $outsideArea = false;
+
     #[ORM\Column(enumType: IncidentStatusEnum::class, options: ['default' => 'reported'])]
     private IncidentStatusEnum $status = IncidentStatusEnum::Reported;
 
@@ -399,6 +407,18 @@ class Incident
     public function getZone(): ?Zone
     {
         return $this->zone;
+    }
+
+    public function isOutsideArea(): bool
+    {
+        return $this->outsideArea;
+    }
+
+    public function setOutsideArea(bool $outsideArea): static
+    {
+        $this->outsideArea = $outsideArea;
+
+        return $this;
     }
 
     public function setZone(?Zone $zone): static

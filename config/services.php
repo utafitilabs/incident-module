@@ -17,6 +17,8 @@ use Uhifadhi\Bundle\AreaBundle\Repository\AreaOfInterestRepository;
 use Uhifadhi\Bundle\AtlasBundle\Map\MapBuilderInterface;
 use Uhifadhi\Bundle\ShellBundle\Widget\Service\WidgetService;
 use Uhifadhi\Contracts\Me\MyCardProviderInterface;
+use Uhifadhi\Contracts\Settings\SettingDefinitionSourceInterface;
+use Uhifadhi\Contracts\Settings\SettingsReaderInterface;
 use Uhifadhi\Contracts\Shell\ConfigurationSectionsInterface;
 use Uhifadhi\Contracts\Shell\ModuleTabsInterface;
 use Uhifadhi\Incident\Controller\IncidentController;
@@ -24,6 +26,7 @@ use Uhifadhi\Incident\Controller\IncidentKindsOverviewController;
 use Uhifadhi\Incident\Controller\IncidentListController;
 use Uhifadhi\Incident\Controller\IncidentOrgController;
 use Uhifadhi\Incident\Me\IncidentMyCards;
+use Uhifadhi\Incident\Repository\AreaBoundaryDistance;
 use Uhifadhi\Incident\Repository\AreaListEntryRepository;
 use Uhifadhi\Incident\Repository\IncidentEventRepository;
 use Uhifadhi\Incident\Repository\IncidentEvidenceRepository;
@@ -48,11 +51,13 @@ use Uhifadhi\Incident\Service\IncidentMoneyService;
 use Uhifadhi\Incident\Service\IncidentOrgFigures;
 use Uhifadhi\Incident\Service\IncidentOrgService;
 use Uhifadhi\Incident\Service\IncidentOverviewFigures;
+use Uhifadhi\Incident\Service\IncidentPlacementService;
 use Uhifadhi\Incident\Service\IncidentReportService;
 use Uhifadhi\Incident\Service\IncidentSettingsService;
 use Uhifadhi\Incident\Service\IncidentTransitionService;
 use Uhifadhi\Incident\Service\IncidentWidgetUrls;
 use Uhifadhi\Incident\Service\TaxonomyAdminService;
+use Uhifadhi\Incident\Settings\PlacementSettings;
 use Uhifadhi\Incident\Shell\IncidentConfigurationSections;
 use Uhifadhi\Incident\Shell\IncidentModuleTabs;
 use Uhifadhi\Incident\Twig\IncidentTrailExtension;
@@ -201,11 +206,29 @@ return static function (ContainerConfigurator $container): void {
      */
     $services->set('incident.block_answers', IncidentBlockAnswerService::class);
 
+    /*
+     * SETTINGS › MODULES › INCIDENTS › PLACEMENT, declared to the core's
+     * catalogue; and the judgement of a report's point against its area's
+     * boundary that the settings steer.
+     */
+    $services->set('incident.placement_settings', PlacementSettings::class)
+        ->tag(SettingDefinitionSourceInterface::TAG);
+
+    $services->set('incident.boundary_distance', AreaBoundaryDistance::class)
+        ->args([service('doctrine.orm.entity_manager')]);
+
+    $services->set('incident.placement', IncidentPlacementService::class)
+        ->args([
+            service('incident.boundary_distance'),
+            service(SettingsReaderInterface::class),
+        ]);
+
     $services->set('incident.report', IncidentReportService::class)
         ->args([
             service('doctrine.orm.entity_manager'),
             service(IncidentRepository::class),
             service('incident.zone_locator'),
+            service('incident.placement'),
         ]);
 
     /*

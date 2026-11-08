@@ -36,6 +36,7 @@ use Uhifadhi\Incident\Enum\IncidentSourceEnum;
 use Uhifadhi\Incident\Model\BlockAnswers;
 use Uhifadhi\Incident\Model\BlockQuestionCatalogue;
 use Uhifadhi\Incident\Model\BlockQuestionSet;
+use Uhifadhi\Incident\Model\IncidentPlacement;
 use Uhifadhi\Incident\Model\IncidentPrefill;
 use Uhifadhi\Incident\Model\ReportChecklist;
 use Uhifadhi\Incident\Module\IncidentModuleProvider;
@@ -43,6 +44,7 @@ use Uhifadhi\Incident\Repository\TaxonomyKindRepository;
 use Uhifadhi\Incident\Repository\TaxonomySubcategoryRepository;
 use Uhifadhi\Incident\Service\AreaListService;
 use Uhifadhi\Incident\Service\IncidentBlockAnswerService;
+use Uhifadhi\Incident\Service\IncidentPlacementService;
 use Uhifadhi\Incident\Service\IncidentReportService;
 
 /**
@@ -128,6 +130,7 @@ final class IncidentReportController
         private readonly TaxonomySubcategoryRepository $subcategories,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly TokenStorageInterface $tokenStorage,
+        private readonly IncidentPlacementService $placements,
     ) {
     }
 
@@ -209,14 +212,21 @@ final class IncidentReportController
             $errors['blocks'] = 'Every block that is on needs its own first answer: '.implode(' · ', $missing).'.';
         }
 
-        if (null === $subcategory || null === $position || '' === $title || [] !== $missing) {
+        // OUTSIDE THE AREA'S BOUNDARY: the area's setting decides whether the
+        // web form files it as it is, once the filer chose to keep the point,
+        // or not until the point is inside.
+        $placement = null === $position ? null : $this->placements->judge($area, $position);
+        $kept = 'outside' === $request->request->getString('placement');
+        $heldOutside = null !== $placement && ($placement->refused() || ($placement->needsConsent() && !$kept));
+
+        if (null === $subcategory || null === $position || '' === $title || [] !== $missing || $heldOutside) {
             // 422 and the form back: the request was understood and simply cannot
             // be stored, which is how every recording screen in this deployment
             // answers a rejected form. It comes back on the same page it was made
             // on, with the source card and everything typed still there — being
             // refused is not a new entry point.
             return new Response(
-                $this->render($area, $prefill, $subcategory, $errors),
+                $this->render($area, $prefill, $subcategory, $errors, $placement, $kept),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
         }
@@ -253,7 +263,7 @@ final class IncidentReportController
      *
      * @param array<string, string> $errors
      */
-    private function render(AreaOfInterest $area, IncidentPrefill $prefill, ?TaxonomySubcategory $chosen, array $errors): string
+    private function render(AreaOfInterest $area, IncidentPrefill $prefill, ?TaxonomySubcategory $chosen, array $errors, ?IncidentPlacement $placement = null, bool $kept = false): string
     {
         $fromARecord = $prefill->hasProvenance();
         $query = $prefill->toQuery();
@@ -268,6 +278,10 @@ final class IncidentReportController
             'chosen' => $chosen,
             'csrfToken' => $this->csrfTokenManager->getToken(self::CSRF_TOKEN_ID)->getValue(),
             'errors' => $errors,
+            // WHERE THE POSTED POINT LIES AGAINST THE AREA, for the banner over
+            // the Where row; null on a fresh form, whose point nobody has judged.
+            'placement' => $placement,
+            'placementKept' => $kept,
             // WHAT EACH SUB-CATEGORY'S BLOCKS ASK, keyed by wire-code: the form
             // renders one fold per block, so the page never types a question of
             // its own and a block that is off has no markup at all.

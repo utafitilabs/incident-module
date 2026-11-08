@@ -14,12 +14,16 @@ declare(strict_types=1);
 namespace Uhifadhi\Incident\Tests\Integration\Service;
 
 use Symfony\Component\Uid\Uuid;
+use Uhifadhi\Bundle\RegistryBundle\Settings\SettingChange;
+use Uhifadhi\Bundle\RegistryBundle\Settings\SettingsWriter;
+use Uhifadhi\Contracts\Settings\SettingDepth;
 use Uhifadhi\Incident\Enum\IncidentSourceEnum;
 use Uhifadhi\Incident\Enum\IncidentStatusEnum;
 use Uhifadhi\Incident\Enum\MoneyDirectionEnum;
 use Uhifadhi\Incident\Model\BlockAnswers;
 use Uhifadhi\Incident\Model\IncidentPrefill;
 use Uhifadhi\Incident\Service\IncidentReportService;
+use Uhifadhi\Incident\Settings\PlacementSettings;
 use Uhifadhi\Incident\Tests\Integration\IntegrationTestCase;
 
 /**
@@ -82,6 +86,30 @@ final class IncidentReportServiceTest extends IntegrationTestCase
 
         self::assertSame($west->getId(), $incident->getZone()?->getId());
         self::assertSame('North Gate', $incident->zoneLabel());
+    }
+
+    /**
+     * OUTSIDE THE AREA IS A MARK, AND FILING NEVER REFUSES IT: a report from a
+     * phone reaches the service directly, and an area set to Refuse still keeps
+     * it, marked outside the area.
+     */
+    public function testAPointOutsideTheBoundaryIsFiledAndMarkedWhateverTheSetting(): void
+    {
+        $area = $this->anAreaWithKinds();
+        /** @var SettingsWriter $writer */
+        $writer = $this->service('registry.settings.writer');
+        $writer->apply([new SettingChange(
+            PlacementSettings::OUTSIDE_BOUNDARY,
+            SettingDepth::Area,
+            (string) $area->getUuidString(),
+            'refuse',
+        )], 'test');
+
+        $outside = $this->anIncident($area, position: '{"type":"Point","coordinates":[-28.989,-3.21]}');
+        $inside = $this->anIncident($area);
+
+        self::assertTrue($outside->isOutsideArea());
+        self::assertFalse($inside->isOutsideArea());
     }
 
     /** UNZONED IS A FIRST-CLASS ANSWER — an org with no zones is the normal state. */

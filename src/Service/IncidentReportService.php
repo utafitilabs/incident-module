@@ -58,6 +58,7 @@ final readonly class IncidentReportService
         private EntityManagerInterface $entityManager,
         private IncidentRepository $incidents,
         private IncidentZoneLocator $zones,
+        private IncidentPlacementService $placements,
     ) {
     }
 
@@ -94,6 +95,9 @@ final readonly class IncidentReportService
             // at filing rather than on every read: an incident does not move, and
             // recomputing it per render would be a spatial join on every widget.
             ->setZone($this->zones->locate($area, $position))
+            // OUTSIDE THE AREA IS A MARK, NEVER A REFUSAL HERE: whatever path a
+            // report takes, it is filed; the web form alone may hold one back.
+            ->setOutsideArea($this->placements->judge($area, $position)->outside)
             // THE ANSWERS TO THE BLOCKS THE SUB-CATEGORY SWITCHED ON, and the
             // figure the money block asked, which is the CLAIMED FIGURE and not a
             // money record — see below.

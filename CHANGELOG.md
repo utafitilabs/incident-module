@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+ * A REPORT PLACED OUTSIDE ITS AREA'S BOUNDARY (Settings › Modules › Incidents › Placement, per area): Accept, Warn (the default) or Refuse, and "Inside if within" (500 m, 0–10000). Beyond the boundary by more than that, the web form under Warn holds the report with a banner — "Move the point" / "File it outside the area", the second posting `placement=outside` — and under Refuse offers only Move the point and keeps "a point inside <area>" owed until the point moves. Every filing is judged and marked (`incident.outside_area`, migration `Version20261108120000`); a report from a phone is always filed and marked. Needs core 0.3's choice meanings, setting notes and the banner's submit-button door.
+
+ * No sheet the module ships gives a house fold a transition of its own (`tests/Unit/Template/FoldConformanceTest`).
+
  * THE MODULE RUNS ON CORE 0.3 (`uhifadhi/uhifadhi` `^0.3`), the line whose Atlas draws every Chart.js kind: the charts name their kind with the Contracts enum, `Uhifadhi\Contracts\Performance\ChartKind`, since `Uhifadhi\Bundle\AtlasBundle\Model\ChartKind` is gone from the core.
 
  * THE JOURNEY CARD on the case file replaces the step bar and the separate row of moves: one card, *The journey · step n of 5 · <place>*, above the index, its five places stacked on a line. A reached place says when and by whom; the current place carries the legal move as the house `.cta` at the right end of its row; a place ahead says what reaches it ("when the claimant is paid, or the money is waived", "by itself, 30 days after resolved", with the date once resolved). A row takes the house row tint on hover, the current row a stronger one at rest. The dashboard's "where things stand" widget keeps the rail (`.i-wf`, `.i-trans`).

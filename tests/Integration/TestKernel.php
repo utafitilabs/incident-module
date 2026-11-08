@@ -408,6 +408,8 @@ final class TestKernel extends Kernel
             'registry.facts.rebuild',
             'registry.facts.reader',
             'messenger.transport.async',
+            'incident.placement',
+            'registry.settings.writer',
         ] as $id) {
             $services->alias('test_public.'.$id, $id)->public();
         }

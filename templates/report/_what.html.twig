@@ -38,7 +38,7 @@
    The page writes the one line on a labelled row, in the same field set as where,
    when and how bad — one column with room for a caption under each answer.
 
-   Parameters: controller, momentController, kinds, chosen, prefill, blockSets, areaLists
+   Parameters: controller, momentController, kinds, chosen, prefill, blockSets, areaLists, placement, placementKept
    ========================================================================== #}
 <div class="i-fieldset">
     <div class="i-fld"><label for="report-title">What happened</label>
@@ -51,6 +51,22 @@
        nobody can add reliably tomorrow. It arrives already answered when the
        filing came from a record, and stays editable because the record's guess
        is still a guess. #}
+    {# OUTSIDE THE AREA'S BOUNDARY, by more than the area's "Inside if within":
+       said before anything is filed. Under Warn the filer may keep the point
+       ("File it outside the area" files the form with it, marked outside the
+       area); under Refuse the form will not file it until the point is inside.
+       A filer who already kept it carries that choice on a re-render. #}
+    {%- if placement and (placement.needsConsent and not placementKept or placement.refused) %}
+        {{ include('@Shell/_banner.html.twig', {
+            title: 'This point is outside ' ~ placement.areaName ~ ', ' ~ placement.distance ~ ' beyond its boundary.',
+            text: placement.refused ? '— This area files reports inside its boundary only.' : '— Move it inside, or file it as outside the area.',
+            actions: placement.refused
+                ? {'Move the point': '#report-lat'}
+                : {'Move the point': '#report-lat', 'File it outside the area': {button: {name: 'placement', value: 'outside'}}},
+        }, with_context: false) }}
+    {%- elseif placementKept %}
+        <input type="hidden" name="placement" value="outside">
+    {%- endif %}
     <div class="i-fld"><label for="report-lat">Where</label>
         <span><input type="text" id="report-lat" name="lat" inputmode="decimal" placeholder="latitude"
                      value="{{ prefill.latitude }}">

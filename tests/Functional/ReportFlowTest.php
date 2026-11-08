@@ -15,9 +15,14 @@ namespace Uhifadhi\Incident\Tests\Functional;
 
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Uid\Uuid;
+use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
+use Uhifadhi\Bundle\RegistryBundle\Settings\SettingChange;
+use Uhifadhi\Bundle\RegistryBundle\Settings\SettingsWriter;
+use Uhifadhi\Contracts\Settings\SettingDepth;
 use Uhifadhi\Incident\Entity\Incident;
 use Uhifadhi\Incident\Enum\IncidentSourceEnum;
 use Uhifadhi\Incident\Enum\IncidentStatusEnum;
+use Uhifadhi\Incident\Settings\PlacementSettings;
 use Uhifadhi\Incident\Tests\Integration\Fixtures\StubRecordFileSource;
 
 /**
@@ -1116,5 +1121,97 @@ final class ReportFlowTest extends FunctionalTestCase
         self::assertStringNotContainsString('i-sheet', $dashboard->html());
         self::assertCount(0, $dashboard->filter('.ro-drawer'));
         self::assertCount(0, $dashboard->filter('form.ro-form'));
+    }
+
+    // ── A POINT OUTSIDE THE AREA'S BOUNDARY ─────────────────────────────────
+
+    /**
+     * WARN, THE DEFAULT: the person filing is told before anything is filed,
+     * and may move the point or file it as it is.
+     */
+    public function testAPointOutsideTheBoundaryIsToldBeforeItIsFiled(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $crawler = $this->fileOutside($area);
+
+        self::assertResponseStatusCodeSame(422);
+        $banner = $crawler->filter('form .banner');
+        self::assertCount(1, $banner);
+        self::assertSame('This point is outside Kilimani, 1.2 km beyond its boundary. — Move it inside, or file it as outside the area.', trim($banner->filter('.banner-t')->text()));
+        self::assertSame(['Move the point', 'File it outside the area'], $banner->filter('.banner-acts .btn')->each(static fn (Crawler $b): string => trim($b->text())));
+        self::assertSame('outside', $banner->filter('button[name="placement"]')->attr('value'));
+        self::assertSame(0, $this->em->getRepository(Incident::class)->count([]));
+    }
+
+    public function testFilingItOutsideTheAreaKeepsThePointAndMarksTheIncident(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $this->fileOutside($area, ['placement' => 'outside']);
+
+        self::assertResponseRedirects();
+        $incident = $this->em->getRepository(Incident::class)->findOneBy([]);
+        self::assertNotNull($incident);
+        self::assertTrue($incident->isOutsideArea());
+    }
+
+    /** REFUSE: only moving the point is offered, and the gate names the point as still needed. */
+    public function testAnAreaThatRefusesOffersOnlyMovingThePoint(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $this->setForTheArea($area, PlacementSettings::OUTSIDE_BOUNDARY, 'refuse');
+        $crawler = $this->fileOutside($area, ['placement' => 'outside']);
+
+        self::assertResponseStatusCodeSame(422);
+        $banner = $crawler->filter('form .banner');
+        self::assertSame('This point is outside Kilimani, 1.2 km beyond its boundary. — This area files reports inside its boundary only.', trim($banner->filter('.banner-t')->text()));
+        self::assertSame(['Move the point'], $banner->filter('.banner-acts .btn')->each(static fn (Crawler $b): string => trim($b->text())));
+        self::assertCount(1, $crawler->filter('form input[type="hidden"][data-need="a point inside Kilimani"]'));
+        self::assertSame(0, $this->em->getRepository(Incident::class)->count([]));
+    }
+
+    public function testAnAreaThatAcceptsFilesItMarkedOutside(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $this->setForTheArea($area, PlacementSettings::OUTSIDE_BOUNDARY, 'accept');
+        $this->fileOutside($area);
+
+        self::assertResponseRedirects();
+        self::assertTrue($this->em->getRepository(Incident::class)->findOneBy([])?->isOutsideArea());
+    }
+
+    public function testAPointInsideTheBoundaryShowsNoBannerAndIsNotMarked(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $this->fileOutside($area, ['lng' => '-29.75']);
+
+        self::assertResponseRedirects();
+        self::assertFalse($this->em->getRepository(Incident::class)->findOneBy([])?->isOutsideArea());
+    }
+
+    /**
+     * Files a report whose point is 0.011° east of the area's boundary at
+     * 3.21° S, about 1.2 km beyond it.
+     *
+     * @param array<string, string> $overrides
+     */
+    private function fileOutside(AreaOfInterest $area, array $overrides = []): Crawler
+    {
+        $this->client->loginUser($this->aReporter());
+        $html = $this->client->request('GET', $this->reportUrl($this->uuidOf($area)))->html();
+
+        return $this->client->request('POST', $this->createUrl($this->uuidOf($area)), $overrides + [
+            '_token' => $this->tokenFrom($html),
+            'subcategory' => 'livestock-depredation',
+            'title' => 'Lion killed four goats beyond the river',
+            'lat' => '-3.21',
+            'lng' => '-28.989',
+        ] + self::theBlocksDepredationAsks());
+    }
+
+    private function setForTheArea(AreaOfInterest $area, string $key, string $value): void
+    {
+        /** @var SettingsWriter $writer */
+        $writer = static::getContainer()->get('test_public.registry.settings.writer');
+        $writer->apply([new SettingChange($key, SettingDepth::Area, $this->uuidOf($area), $value)], 'test');
     }
 }
