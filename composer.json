@@ -35,7 +35,7 @@
         "symfony/uid": "^7.3 || ^8.0",
         "symfony/ux-icons": "^3.4",
         "uhifadhi/storage-module": "^0.4",
-        "uhifadhi/uhifadhi": "^0.2.4",
+        "uhifadhi/uhifadhi": "^0.3",
         "utafitilabs/postgis-bundle": "^0.1"
     },
     "autoload": {

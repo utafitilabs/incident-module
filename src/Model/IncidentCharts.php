@@ -14,8 +14,8 @@ declare(strict_types=1);
 namespace Uhifadhi\Incident\Model;
 
 use Uhifadhi\Bundle\AtlasBundle\Model\AtlasChart;
-use Uhifadhi\Bundle\AtlasBundle\Model\ChartKind;
 use Uhifadhi\Bundle\AtlasBundle\Model\ChartSeries;
+use Uhifadhi\Contracts\Performance\ChartKind;
 
 /**
  * THIS SURFACE'S FIGURES, STATED FOR THE ATLAS.

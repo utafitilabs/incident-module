@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Uhifadhi\Incident\Tests\Unit\Model;
 
 use PHPUnit\Framework\TestCase;
-use Uhifadhi\Bundle\AtlasBundle\Model\ChartKind;
+use Uhifadhi\Contracts\Performance\ChartKind;
 use Uhifadhi\Incident\Model\IncidentCharts;
 
 /**
