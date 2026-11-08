@@ -16,7 +16,10 @@
    and mark comes from the catalogue, which is why unticking a block in the editor
    is the whole of removing its questions from this page.
 
-   Parameters: controller, sets, subcategory, areaLists, disabled
+   A FORM THAT CAME BACK carries its answers, rows and all, so every row the
+   filer added is drawn again; a fresh one draws one empty row.
+
+   Parameters: controller, sets, subcategory, areaLists, disabled, answers (null on the sets not chosen)
    ========================================================================== #}
 <div class="i-blocks">
     {% for set in sets %}
@@ -37,21 +40,25 @@
                        because a list of five labelled rows is a form nobody can
                        read; the placeholder is the label. #}
                     <div class="reps" {{ stimulus_target(controller, 'rows') }}>
+                        {% for row in answers ? answers.rows(set.block.value) : [[]] %}
+                        {% set at = loop.index0 %}
                         <div class="rep">
-                            <span class="ix">1</span>
+                            <span class="ix">{{ loop.index }}</span>
                             {% for question in set.rowQuestions %}
                                 {{ include('@UhifadhiIncident/report/_control.html.twig', {
                                     controller: controller,
                                     question: question,
-                                    name: 'blocks[' ~ set.block.value ~ '][rows][0][' ~ question.key ~ ']',
+                                    name: 'blocks[' ~ set.block.value ~ '][rows][' ~ at ~ '][' ~ question.key ~ ']',
                                     areaLists: areaLists,
                                     need: question.gates ? 'row' : null,
                                     disabled: disabled,
+                                    value: row[question.key] ?? '',
                                 }, with_context: false) }}
                             {% endfor %}
                             <button type="button" class="x" {{ stimulus_action(controller, 'removeRow', 'click') }}
                                     aria-label="Remove this row">&times;</button>
                         </div>
+                        {% endfor %}
                     </div>
                     <div class="repfoot">
                         <button type="button" class="repadd" {{ stimulus_action(controller, 'addRow', 'click') }}>{{ set.addLabel }}</button>
@@ -71,6 +78,7 @@
                                 need: question.gates ? 'answer' : null,
                                 disabled: disabled,
                                 id: id,
+                                value: answers ? answers.block(set.block.value, question.key) : '',
                             }, with_context: false) }}
                             <span class="fwhen{{ question.gates ? ' req' }}">{{ question.whenLabel }}</span>
                             {%- if question.note %} <span class="i-kpi-note">{{ question.note }}</span>{% endif -%}

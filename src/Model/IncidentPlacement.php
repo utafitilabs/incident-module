@@ -18,8 +18,9 @@ use Uhifadhi\Incident\Enum\OutsideBoundaryEnum;
 /**
  * WHERE A REPORT'S POINT LIES AGAINST ITS AREA: how far beyond the boundary
  * (nought inside, null where the area has no boundary to measure from),
- * whether that is outside once the area's tolerance is allowed, and what the
- * area's setting does with a point outside.
+ * whether that is outside once the area's tolerance is allowed, what the
+ * area's setting does with a point outside, and the zone the point falls in
+ * (null for none).
  */
 final readonly class IncidentPlacement
 {
@@ -28,6 +29,7 @@ final readonly class IncidentPlacement
         public ?float $metres,
         public bool $outside,
         public OutsideBoundaryEnum $rule,
+        public ?string $zoneName = null,
     ) {
     }
 
@@ -46,6 +48,12 @@ final readonly class IncidentPlacement
     public function needsConsent(): bool
     {
         return $this->outside && OutsideBoundaryEnum::Warn === $this->rule;
+    }
+
+    /** How the form names what a refused point still owes, in the gate and on the rail. */
+    public function pointNeeded(): string
+    {
+        return 'a point inside '.$this->areaName;
     }
 
     /** Whether the web form will not file it. */

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Uhifadhi\Incident\Controller;
 
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,13 +32,13 @@ use Uhifadhi\Bundle\AreaBundle\Entity\AreaOfInterest;
 use Uhifadhi\Bundle\RegistryBundle\RegistryBundle;
 use Uhifadhi\Contracts\Entity\UserInterface;
 use Uhifadhi\Incident\Entity\TaxonomySubcategory;
-use Uhifadhi\Incident\Enum\IncidentSeverityEnum;
 use Uhifadhi\Incident\Enum\IncidentSourceEnum;
 use Uhifadhi\Incident\Model\BlockAnswers;
 use Uhifadhi\Incident\Model\BlockQuestionCatalogue;
 use Uhifadhi\Incident\Model\BlockQuestionSet;
 use Uhifadhi\Incident\Model\IncidentPlacement;
 use Uhifadhi\Incident\Model\IncidentPrefill;
+use Uhifadhi\Incident\Model\ReportAnswers;
 use Uhifadhi\Incident\Model\ReportChecklist;
 use Uhifadhi\Incident\Module\IncidentModuleProvider;
 use Uhifadhi\Incident\Repository\TaxonomyKindRepository;
@@ -112,6 +113,9 @@ final class IncidentReportController
     /** The token id the report form carries. */
     public const string CSRF_TOKEN_ID = 'incident_report';
 
+    /** The Stimulus controller the form is drawn for, and the placement slot fetched into it. */
+    public const string STIMULUS_CONTROLLER = '@uhifadhi/incident-module/incident-report';
+
     /** What the register can print: {@see Incident::$title} is varchar(200). */
     private const int TITLE_LIMIT = 200;
 
@@ -147,13 +151,60 @@ final class IncidentReportController
         #[MapEntity(mapping: ['uuid' => 'uuid'])] AreaOfInterest $area,
     ): Response {
         $prefill = IncidentPrefill::fromRequest($request);
+        $position = $prefill->position();
 
         return new Response($this->render(
             $area,
             $prefill,
+            ReportAnswers::fromPrefill($prefill),
             null === $prefill->subcategorySlug ? null : $this->subcategories->findOneByAreaAndCode($area, $prefill->subcategorySlug),
             [],
+            null === $position ? null : $this->placements->judge($area, $position),
         ));
+    }
+
+    /**
+     * WHERE A POINT LIES AGAINST THE AREA, asked by the report form whenever its
+     * point changes, so the banner is over the Where row before anything is
+     * filed. The banner and the Where note come drawn by the same partials the
+     * form renders; the filing is judged again when it is posted.
+     */
+    #[Route(
+        '/areas/{uuid}/modules/incidents/placement',
+        name: 'incident_placement',
+        requirements: ['uuid' => Requirement::UUID],
+        methods: ['GET'],
+        priority: 2,
+    )]
+    #[IsGranted('incidents.record', subject: 'area')]
+    public function placement(
+        Request $request,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] AreaOfInterest $area,
+    ): Response {
+        $position = self::positionFrom($request->query->getString('lat'), $request->query->getString('lng'));
+        if (null === $position) {
+            return new JsonResponse(['error' => 'A point is two numbers, a latitude and a longitude.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $placement = $this->placements->judge($area, $position);
+
+        // Metres stay a float on the wire, nought included.
+        $response = new JsonResponse();
+        $response->setEncodingOptions(JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_PRESERVE_ZERO_FRACTION);
+
+        return $response->setData([
+            'placement' => $placement->outside ? 'outside' : 'inside',
+            'metres' => $placement->metres,
+            'setting' => $placement->rule->value,
+            'area' => $placement->areaName,
+            'zone' => $placement->zoneName,
+            'banner' => $this->twig->render('@UhifadhiIncident/report/_placement.html.twig', [
+                'controller' => self::STIMULUS_CONTROLLER,
+                'placement' => $placement,
+                'placementKept' => false,
+            ]),
+            'where' => trim($this->twig->render('@UhifadhiIncident/report/_where.html.twig', ['placement' => $placement])),
+        ]);
     }
 
     /**
@@ -179,21 +230,22 @@ final class IncidentReportController
         // THIS AREA'S WORD, never another area's with the same code: the form
         // posts a wire-code and the area in the path is what gives it meaning.
         $subcategory = $this->subcategories->findOneByAreaAndCode($area, $request->request->getString('subcategory'));
-        $position = self::positionFrom($request) ?? $prefill->position();
+        $position = self::positionFrom($request->request->getString('lat'), $request->request->getString('lng')) ?? $prefill->position();
+        $answers = ReportAnswers::fromPost($request, self::occurredAtFrom($request));
         // CLAMPED, NEVER REFUSED. The line arrives prefilled from the source
         // record's note, which is written to be read rather than to fit a column,
         // so a long one is stored short instead of costing somebody their report.
         // Nothing is lost: the note travels verbatim into the narrative and the
         // provenance link keeps the original reachable forever.
-        $title = mb_substr(trim($request->request->getString('title')), 0, self::TITLE_LIMIT);
+        $title = mb_substr(trim($answers->title), 0, self::TITLE_LIMIT);
 
         // THE BLOCKS' ANSWERS, READ AGAINST WHAT THE CHOSEN SUB-CATEGORY ASKS.
         // Nothing is read for a sub-category that was not chosen, so a form that
         // carried every sub-category's questions files only the one it picked.
-        $answers = null === $subcategory
+        $blockAnswers = null === $subcategory
             ? new BlockAnswers()
             : $this->blockAnswers->read($subcategory, $request->request->all('blocks'));
-        $missing = null === $subcategory ? [] : $this->blockAnswers->missing($subcategory, $answers);
+        $missing = null === $subcategory ? [] : $this->blockAnswers->missing($subcategory, $blockAnswers);
 
         $errors = [];
         if (null === $subcategory) {
@@ -226,7 +278,7 @@ final class IncidentReportController
             // on, with the source card and everything typed still there — being
             // refused is not a new entry point.
             return new Response(
-                $this->render($area, $prefill, $subcategory, $errors, $placement, $kept),
+                $this->render($area, $prefill, $answers, $subcategory, $errors, $placement, $kept, $missing),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
         }
@@ -237,16 +289,16 @@ final class IncidentReportController
             title: $title,
             position: $position,
             now: new \DateTimeImmutable(),
-            severity: IncidentSeverityEnum::tryFrom($request->request->getString('severity')) ?? IncidentSeverityEnum::Moderate,
+            severity: $answers->severity,
             // The wire token, mapped once and deliberately — never a fallback
             // that happens to land on the right case.
             source: IncidentSourceEnum::forToken($request->request->getString('source'))
                 ?? ($prefill->hasProvenance() ? IncidentSourceEnum::PatrolObservation : IncidentSourceEnum::Direct),
-            occurredAt: self::occurredAtFrom($request) ?? $prefill->occurredAt,
+            occurredAt: $answers->occurredAt ?? $prefill->occurredAt,
             narrative: self::narrativeFrom($request) ?? $prefill->note,
             reportedBy: $this->filer(),
             prefill: $prefill,
-            blockAnswers: $answers,
+            blockAnswers: $blockAnswers,
         );
 
         $this->flash($request, \sprintf('%s filed. It starts at reported and cannot skip verification.', $incident->getReference()));
@@ -262,8 +314,9 @@ final class IncidentReportController
      * refused one can never disagree about anything.
      *
      * @param array<string, string> $errors
+     * @param list<string>|null     $blocksMissing what the post still owed of the chosen word's blocks; null on a fresh form
      */
-    private function render(AreaOfInterest $area, IncidentPrefill $prefill, ?TaxonomySubcategory $chosen, array $errors, ?IncidentPlacement $placement = null, bool $kept = false): string
+    private function render(AreaOfInterest $area, IncidentPrefill $prefill, ReportAnswers $answers, ?TaxonomySubcategory $chosen, array $errors, ?IncidentPlacement $placement = null, bool $kept = false, ?array $blocksMissing = null): string
     {
         $fromARecord = $prefill->hasProvenance();
         $query = $prefill->toQuery();
@@ -275,13 +328,17 @@ final class IncidentReportController
             'now' => new \DateTimeImmutable(),
             'kinds' => $kinds,
             'prefill' => $prefill,
+            'answers' => $answers,
+            'blocksMissing' => $blocksMissing,
             'chosen' => $chosen,
             'csrfToken' => $this->csrfTokenManager->getToken(self::CSRF_TOKEN_ID)->getValue(),
             'errors' => $errors,
-            // WHERE THE POSTED POINT LIES AGAINST THE AREA, for the banner over
-            // the Where row; null on a fresh form, whose point nobody has judged.
+            // WHERE THE POINT LIES AGAINST THE AREA, for the banner over the
+            // Where row; null while the form has no point. The form asks
+            // placementUrl again whenever the point changes.
             'placement' => $placement,
             'placementKept' => $kept,
+            'placementUrl' => $this->router->generate('incident_placement', ['uuid' => $area->getUuidString()]),
             // WHAT EACH SUB-CATEGORY'S BLOCKS ASK, keyed by wire-code: the form
             // renders one fold per block, so the page never types a question of
             // its own and a block that is off has no markup at all.
@@ -312,12 +369,12 @@ final class IncidentReportController
         ]);
     }
 
-    /** The point the form carries, as GeoJSON text, or null where it carried none. */
-    private static function positionFrom(Request $request): ?string
+    /** The point a latitude and longitude make, as GeoJSON text, or null where they make none. */
+    private static function positionFrom(string $lat, string $lng): ?string
     {
-        $lat = $request->request->getString('lat');
-        $lng = $request->request->getString('lng');
-        if (!is_numeric($lat) || !is_numeric($lng)) {
+        $lat = trim($lat);
+        $lng = trim($lng);
+        if (!is_numeric($lat) || !is_numeric($lng) || abs((float) $lat) > 90.0 || abs((float) $lng) > 180.0) {
             return null;
         }
 

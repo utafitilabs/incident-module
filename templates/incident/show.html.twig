@@ -60,7 +60,9 @@
         <span class="f"><span class="k">Category</span><span class="v">{{ incident.kind.label }}<em>{{ incident.subcategory.label }}</em></span></span>
         <span class="f"><span class="k">Status</span><span class="v">{{ incident.status.label }}</span></span>
         <span class="f"><span class="k">Severity</span><span class="v">{{ incident.severity.label }}</span></span>
-        <span class="f"><span class="k">Zone</span><span class="v">{{ incident.zoneLabel }}</span></span>
+        {# A POINT FILED OUTSIDE THE AREA'S BOUNDARY says so beside the place, here
+           and on the Where card: judged once, at filing. #}
+        <span class="f"><span class="k">Zone</span><span class="v">{{ incident.zoneLabel }}{% if incident.outsideArea %}<em>filed outside {{ area.name }}</em>{% endif %}</span></span>
         {% if incident.occurredAt %}<span class="f"><span class="k">Occurred</span><span class="v"><time datetime="{{ incident.occurredAt|date('c') }}" data-localtime-format="day">{{ incident.occurredAt|date('D j M')|lower }}</time><em><time datetime="{{ incident.occurredAt|date('c') }}" data-localtime-format="clock">{{ incident.occurredAt|date('H:i') }}</time></em></span></span>{% endif %}
         <span class="f"><span class="k">Filed</span><span class="v"><time datetime="{{ incident.reportedAt|date('c') }}" data-localtime-format="day">{{ incident.reportedAt|date('D j M')|lower }}</time><em><time datetime="{{ incident.reportedAt|date('c') }}" data-localtime-format="clock">{{ incident.reportedAt|date('H:i') }}</time></em></span></span>
         <span class="f"><span class="k">Verified in</span><span class="v">{% if incident.hoursToVerify is null %}—{% else %}{{ incident.hoursToVerify }} h{% endif %}<em>term {{ incident.subcategory.termLabel }}</em></span></span>
@@ -145,7 +147,7 @@
         {% import '@UhifadhiStorage/upload/_tile.html.twig' as evidence %}
         {% block shell_onpage_main %}
             <div id="where" class="c plate-fill">
-                <span class="tab">Where<span class="src">· {{ incident.zoneLabel }}</span></span>
+                <span class="tab">Where<span class="src">· {{ incident.zoneLabel }}{% if incident.outsideArea %} · filed outside {{ area.name }}{% endif %}</span></span>
                 {# The SAME plate the dashboard maps draw, stating this incident's
                    own category alone: one mark, one meaning, wherever it is drawn.
                    The legend floats over the imagery, so the card has no region

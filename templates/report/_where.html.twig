@@ -1,0 +1,11 @@
+{# WHERE THE POINT FELL, on the Where row: outside the area and so in no zone,
+   or the zone it is in. Nothing for a point nobody has judged, or one inside
+   and unzoned. Fetched with the banner whenever the point changes.
+
+   Parameters: placement
+   ========================================================================== #}
+{%- if placement and placement.outside -%}
+    outside {{ placement.areaName }} · {{ placement.zoneName ?? 'no zone' }}
+{%- elseif placement and placement.zoneName -%}
+    <span class="i-zone">{{ placement.zoneName }}</span>
+{%- endif -%}

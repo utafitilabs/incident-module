@@ -22,7 +22,8 @@
    where the decision is not being made. Cancel sits beside File, where somebody
    decides whether to go through with the filing, and it says where it goes.
 
-   Parameters: controller, momentController, area, kinds, prefill, chosen, csrfToken, errors, placement, placementKept,
+   Parameters: controller, momentController, area, kinds, prefill, answers, blocksMissing, chosen, csrfToken, errors,
+               placement, placementKept, placementUrl,
                createUrl, cancelUrl, blockSets, areaLists, checklists
    ========================================================================== #}
 {# NO CRUMB HERE. The trail is the shell frame's socket and the page fills it
@@ -41,7 +42,7 @@
 {# TWO COLUMNS, ONE CONTROLLER. The rail's checklist carries the gate's own marks,
    so the gate has to be able to reach it: the controller wraps the form AND the
    rail. #}
-<div class="i-rwrap" {{ stimulus_controller(controller) }}>
+<div class="i-rwrap" {{ stimulus_controller(controller, {placementUrl: placementUrl}) }}>
     <div class="ro-col">
         {% if prefill.hasProvenance %}
             {{ include('@UhifadhiIncident/report/_source.html.twig', {prefill: prefill}, with_context: false) }}
@@ -60,10 +61,10 @@
 
             <div class="ro-sect">
                 {{ include('@UhifadhiIncident/report/_secthd.html.twig', {n: 2, heading: 'What happened', mark: null, markLabel: null}, with_context: false) }}
-                {{ include('@UhifadhiIncident/report/_what.html.twig', {controller: controller, momentController: momentController, kinds: kinds, chosen: chosen, prefill: prefill, blockSets: blockSets, areaLists: areaLists, placement: placement ?? null, placementKept: placementKept ?? false}, with_context: false) }}
+                {{ include('@UhifadhiIncident/report/_what.html.twig', {controller: controller, momentController: momentController, kinds: kinds, chosen: chosen, prefill: prefill, answers: answers, blockSets: blockSets, areaLists: areaLists, placement: placement, placementKept: placementKept}, with_context: false) }}
             </div>
 
-            {{ include('@UhifadhiIncident/report/_gate.html.twig', {controller: controller, chosen: chosen, prefill: prefill, cancelUrl: cancelUrl, blockSets: blockSets, placement: placement ?? null}, with_context: false) }}
+            {{ include('@UhifadhiIncident/report/_gate.html.twig', {controller: controller, chosen: chosen, answers: answers, blocksMissing: blocksMissing, cancelUrl: cancelUrl, blockSets: blockSets, placement: placement}, with_context: false) }}
         </form>
     </div>
 
@@ -79,6 +80,8 @@
         kinds: kinds,
         chosen: chosen,
         prefill: prefill,
+        answers: answers,
+        blocksMissing: blocksMissing,
         checklists: checklists,
     }, with_context: false) }}
 </div>

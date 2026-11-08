@@ -29,13 +29,14 @@
    the line and the place exactly as it holds it on a block, so the rail counts
    them: a progress line that left one out would disagree with the footer by one.
 
-   Parameters: controller, kinds, chosen, prefill, checklists
+   Parameters: controller, kinds, chosen, prefill, answers, blocksMissing, checklists
    ========================================================================== #}
 {# WHAT THE GATE IS MISSING ON FIRST PAINT, computed exactly as
    @UhifadhiIncident/report/_gate.html.twig computes it — a line the source record
-   already wrote counts as filled, and so does a place that came with it. #}
-{% set lineDone = prefill.note is not empty %}
-{% set placeDone = prefill.latitude is not null and prefill.longitude is not null %}
+   already wrote counts as filled, and so does a place that came with it; on a
+   form that came back, what was posted. #}
+{% set lineDone = answers.title|trim is not empty %}
+{% set placeDone = answers.hasPoint %}
 
 {% for kind in kinds %}
     {% for subcategory in kind.subcategories %}
@@ -51,7 +52,7 @@
                 {'need': 'mark where it happened', 'done': placeDone},
             ] %}
             {% for row in checklist.rows|filter(row => row.gates) %}
-                {% set gating = gating|merge([{'need': row.definingAnswer, 'done': false}]) %}
+                {% set gating = gating|merge([{'need': row.definingAnswer, 'done': isChosen and blocksMissing is not null and row.definingAnswer not in blocksMissing}]) %}
             {% endfor %}
             {% set total = gating|length %}
             {% set stillNeeded = gating|filter(g => not g.done)|length %}
@@ -82,20 +83,20 @@
                 ) }}
                 {{ _self.row(
                     'describe what happened', lineDone, ordinals, 'What happened', 'step 2', null,
-                    lineDone
+                    lineDone and prefill.note is not empty
                         ? 'one line the register shows — <b>came with the ' ~ prefill.sourceLabel|e ~ '</b>'
                         : 'one line the register shows. Nothing wrote it for you — this report is the first record of it.'
                 ) }}
                 {{ _self.row(
                     'mark where it happened', placeDone, ordinals, 'Where it happened', 'step 2', null,
-                    placeDone
+                    placeDone and prefill.latitude is not null
                         ? 'the place, on the map — <b>came with the ' ~ prefill.sourceLabel|e ~ '</b>'
                         : 'the place, on the map. An incident happened somewhere, and nobody can add that reliably tomorrow.'
                 ) }}
 
                 {% for row in checklist.rows %}
                     {{ _self.row(
-                        row.definingAnswer, false, ordinals, row.title, row.questionCountLabel, row.foldLabel,
+                        row.definingAnswer, isChosen and blocksMissing is not null and row.definingAnswer not in blocksMissing, ordinals, row.title, row.questionCountLabel, row.foldLabel,
                         row.gates
                             ? row.caption|e ~ '. It cannot do without <b>' ~ row.definingAnswer|e ~ '</b>.'
                             : row.caption|e ~ '. Nothing in it holds up a filing.'

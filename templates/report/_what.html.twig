@@ -38,41 +38,35 @@
    The page writes the one line on a labelled row, in the same field set as where,
    when and how bad — one column with room for a caption under each answer.
 
-   Parameters: controller, momentController, kinds, chosen, prefill, blockSets, areaLists, placement, placementKept
+   EVERYTHING IS DRAWN FROM `answers`: the hand-off's guesses on a fresh form,
+   and what was posted on a form that came back, so a refusal never costs the
+   filer what they had written.
+
+   Parameters: controller, momentController, kinds, chosen, prefill, answers, blockSets, areaLists, placement, placementKept
    ========================================================================== #}
 <div class="i-fieldset">
     <div class="i-fld"><label for="report-title">What happened</label>
         <span><textarea id="report-title" name="title" maxlength="200" rows="2"
                         placeholder="What happened — the list shows the first line"
-                        {{ stimulus_target(controller, 'headline')|stimulus_action(controller, 'grow', 'input') }}>{{ prefill.note }}</textarea>
+                        {{ stimulus_target(controller, 'headline')|stimulus_action(controller, 'grow', 'input') }}>{{ answers.title }}</textarea>
             <span class="ro-req">needed to file</span></span></div>
 
     {# THE PLACE — the one fact a report cannot be filed without and the one
        nobody can add reliably tomorrow. It arrives already answered when the
        filing came from a record, and stays editable because the record's guess
        is still a guess. #}
-    {# OUTSIDE THE AREA'S BOUNDARY, by more than the area's "Inside if within":
-       said before anything is filed. Under Warn the filer may keep the point
-       ("File it outside the area" files the form with it, marked outside the
-       area); under Refuse the form will not file it until the point is inside.
-       A filer who already kept it carries that choice on a re-render. #}
-    {%- if placement and (placement.needsConsent and not placementKept or placement.refused) %}
-        {{ include('@Shell/_banner.html.twig', {
-            title: 'This point is outside ' ~ placement.areaName ~ ', ' ~ placement.distance ~ ' beyond its boundary.',
-            text: placement.refused ? '— This area files reports inside its boundary only.' : '— Move it inside, or file it as outside the area.',
-            actions: placement.refused
-                ? {'Move the point': '#report-lat'}
-                : {'Move the point': '#report-lat', 'File it outside the area': {button: {name: 'placement', value: 'outside'}}},
-        }, with_context: false) }}
-    {%- elseif placementKept %}
-        <input type="hidden" name="placement" value="outside">
-    {%- endif %}
+    <div {{ stimulus_target(controller, 'placement') }}>
+        {{- include('@UhifadhiIncident/report/_placement.html.twig', {controller: controller, placement: placement, placementKept: placementKept}, with_context: false) -}}
+    </div>
+    {# The area is asked where the point lies whenever either half of it changes. #}
     <div class="i-fld"><label for="report-lat">Where</label>
         <span><input type="text" id="report-lat" name="lat" inputmode="decimal" placeholder="latitude"
-                     value="{{ prefill.latitude }}">
+                     value="{{ answers.latitude }}" {{ stimulus_action(controller, 'place', 'input') }}>
             <input type="text" name="lng" inputmode="decimal" placeholder="longitude" aria-label="Longitude"
-                   value="{{ prefill.longitude }}">
+                   value="{{ answers.longitude }}" {{ stimulus_action(controller, 'place', 'input') }}>
             <span class="ro-req">needed to file</span>
+            {% set where = include('@UhifadhiIncident/report/_where.html.twig', {placement: placement}, with_context: false)|trim %}
+            <span class="i-kpi-note" {{ stimulus_target(controller, 'where') }}{{ where is empty ? ' hidden' }}>{{ where|raw }}</span>
             {% if prefill.positionLabel %}<span class="i-kpi-note">{{ prefill.positionLabel }} · came with the {{ prefill.sourceLabel }}</span>{% endif %}</span></div>
 
     {# WHEN IT HAPPENED, IN THE READER'S OWN CLOCK.
@@ -88,8 +82,8 @@
     <div class="i-fld"><label for="report-when">When</label>
         <span {{ stimulus_controller(momentController) }}><input type="datetime-local" id="report-when" name="occurred_at"
                      {{ stimulus_target(momentController, 'input') }}
-                     {% if prefill.occurredAt %}data-instant="{{ prefill.occurredAt|date('c') }}"{% endif %}
-                     value="{{ prefill.occurredAt ? prefill.occurredAt|date('Y-m-d\\TH:i', 'UTC') }}">
+                     {% if answers.occurredAt %}data-instant="{{ answers.occurredAt|date('c') }}"{% endif %}
+                     value="{{ answers.occurredAt ? answers.occurredAt|date('Y-m-d\\TH:i', 'UTC') }}">
             <input type="hidden" name="occurred_at_zone" value="" {{ stimulus_target(momentController, 'zone') }}>
             {% if prefill.occurredAt %}<span class="i-kpi-note">from the {{ prefill.sourceLabel }}</span>{% endif %}</span></div>
 
@@ -97,17 +91,16 @@
        but never in the way of filing. #}
     <div class="i-fld"><label for="report-severity">How bad</label>
         <span><select class="fld" id="report-severity" name="severity">
-                <option value="low">low</option>
-                <option value="moderate" selected>moderate</option>
-                <option value="high">high</option>
-                <option value="critical">critical</option>
+                {%- for severity in ['low', 'moderate', 'high', 'critical'] %}
+                <option value="{{ severity }}"{{ severity == answers.severity.value ? ' selected' }}>{{ severity }}</option>
+                {%- endfor %}
             </select>
             <span class="ro-opt">can wait</span>
             <span class="i-kpi-note">defaults to moderate — whoever verifies it decides properly</span></span></div>
 
     <div class="i-fld"><label for="report-narrative">In their own words</label>
         <span><textarea id="report-narrative" name="narrative" rows="3"
-                        placeholder="Verbatim — kept apart from the officer's assessment">{{ prefill.note }}</textarea>
+                        placeholder="Verbatim — kept apart from the officer's assessment">{{ answers.narrative }}</textarea>
             <span class="ro-opt">can wait</span></span></div>
 </div>
 
@@ -143,6 +136,7 @@
             subcategory: subcategory,
             areaLists: areaLists,
             disabled: not isChosen,
+            answers: isChosen ? answers : null,
         }, with_context: false) }}
         </div>
     {% endfor %}

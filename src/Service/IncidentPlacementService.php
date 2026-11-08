@@ -18,6 +18,7 @@ use Uhifadhi\Contracts\Settings\SettingsReaderInterface;
 use Uhifadhi\Incident\Enum\OutsideBoundaryEnum;
 use Uhifadhi\Incident\Model\IncidentPlacement;
 use Uhifadhi\Incident\Repository\AreaBoundaryDistance;
+use Uhifadhi\Incident\Repository\IncidentZoneLocator;
 use Uhifadhi\Incident\Settings\PlacementSettings;
 
 /**
@@ -31,6 +32,7 @@ final readonly class IncidentPlacementService
     public function __construct(
         private AreaBoundaryDistance $distances,
         private SettingsReaderInterface $settings,
+        private IncidentZoneLocator $zones,
     ) {
     }
 
@@ -47,6 +49,7 @@ final readonly class IncidentPlacementService
             $metres,
             null !== $metres && $metres > (is_numeric($within) ? (float) $within : (float) PlacementSettings::DEFAULT_INSIDE_WITHIN_METRES),
             $rule,
+            $this->zones->locate($area, $position)?->getName(),
         );
     }
 }

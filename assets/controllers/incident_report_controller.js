@@ -26,6 +26,12 @@ import { Controller } from '@hotwired/stimulus';
  * block grows and loses rows. Neither reaches the server — a fold remembers a
  * person's reading habit, not a fact about the incident.
  *
+ * AND IT ASKS THE AREA WHERE THE POINT LIES whenever the point changes, so the
+ * banner over the Where row is there before anything is filed. The answer
+ * arrives drawn by the same partials the server renders the form with — this
+ * controller writes no word of it — and the server judges the point again when
+ * the report is posted.
+ *
  * THE WHOLE FLOW WORKS WITHOUT THIS CONTROLLER: the category is a radio in the
  * noscript block, one row of every repeating block is in the markup, the File
  * control ships disabled and the form posts normally to the same endpoint, which
@@ -37,15 +43,21 @@ export default class extends Controller {
         // The rail beside the form: one card per sub-category, plus the card that
         // stands in while nothing is chosen.
         'asks', 'asksEmpty', 'progress',
-        // A point the area refused, owed until the point is moved.
-        'refusedPoint',
+        // Where the point lies against the area: the slot over the Where row,
+        // the note on it, and the point a refusing area still owes.
+        'placement', 'where', 'refusedPoint',
     ];
+
+    static values = { placementUrl: String };
+
+    /** How long the typing settles before the area is asked about the point. */
+    static SETTLE_MS = 350;
 
     /** The attribute a rail row carries the gate's own missing-answer label on. */
     static NEED = 'data-incident-report-need';
 
     connect() {
-        this.refusedAt = `${this.answer('[name="lat"]')},${this.answer('[name="lng"]')}`;
+        this.asked = 0;
         this.gate();
         // A note copied in from an observation is routinely two lines long, so
         // the box is the size of its answer from the first paint — not after the
@@ -53,6 +65,59 @@ export default class extends Controller {
         if (this.hasHeadlineTarget) {
             this.fit(this.headlineTarget);
         }
+    }
+
+    disconnect() {
+        clearTimeout(this.settling);
+    }
+
+    /** THE POINT MOVED: ask the area once the typing settles. */
+    place() {
+        clearTimeout(this.settling);
+        this.settling = setTimeout(() => this.judge(), this.constructor.SETTLE_MS);
+    }
+
+    /**
+     * WHERE THE POINT LIES, asked of incident_placement. Only the latest
+     * question's answer is drawn; a point that cannot be read, or an answer that
+     * does not come, empties the slot, because the server judges the filing
+     * either way. A moved point drops a choice to keep the last one outside.
+     */
+    async judge() {
+        if (!this.hasPlacementUrlValue || !this.hasPlacementTarget) {
+            return;
+        }
+
+        const asked = ++this.asked;
+        if (!this.hasPosition()) {
+            this.showPlacement('', '');
+            return;
+        }
+
+        const url = new URL(this.placementUrlValue, window.location.href);
+        url.searchParams.set('lat', this.answer('[name="lat"]'));
+        url.searchParams.set('lng', this.answer('[name="lng"]'));
+
+        let answer = null;
+        try {
+            const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+            answer = response.ok ? await response.json() : null;
+        } catch {
+            answer = null;
+        }
+
+        if (asked === this.asked) {
+            this.showPlacement(answer?.banner ?? '', answer?.where ?? '');
+        }
+    }
+
+    showPlacement(banner, where) {
+        this.placementTarget.innerHTML = banner;
+        if (this.hasWhereTarget) {
+            this.whereTarget.innerHTML = where;
+            this.whereTarget.hidden = '' === where.trim();
+        }
+        this.gate();
     }
 
     /**
@@ -141,9 +206,9 @@ export default class extends Controller {
             missing.push('mark where it happened');
         }
         missing.push(...this.blocksMissing());
-        // THE SERVER JUDGES THE POINT AGAIN on the next filing; until the point
-        // moves, the refusal it gave stands.
-        if (this.hasRefusedPointTarget && this.refusedAt === `${this.answer('[name="lat"]')},${this.answer('[name="lng"]')}`) {
+        // A POINT THE AREA REFUSES stands until the area's answer for a moved
+        // point replaces it; the server judges the point again on filing.
+        if (this.hasRefusedPointTarget) {
             missing.push(this.refusedPointTarget.dataset.need);
         }
 

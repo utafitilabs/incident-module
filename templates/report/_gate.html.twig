@@ -24,26 +24,30 @@
    the explicit close on the drawer. Nothing here can be dismissed by clicking
    beside it.
 
-   Parameters: controller, chosen, prefill, cancelUrl, blockSets, placement
+   Parameters: controller, chosen, answers, blocksMissing, cancelUrl, blockSets, placement
    ========================================================================== #}
 {% set missing = [] %}
 {% if not chosen %}{% set missing = missing|merge(['choose a category']) %}{% endif %}
 {# A line the source record already wrote COUNTS AS FILLED: the filer said what
-   happened once, in the field, and the form must not pretend they did not. #}
-{% if not prefill.note %}{% set missing = missing|merge(['describe what happened']) %}{% endif %}
-{% if prefill.latitude is null or prefill.longitude is null %}
+   happened once, in the field, and the form must not pretend they did not. So
+   does whatever a form that came back was posted with. #}
+{% if answers.title|trim is empty %}{% set missing = missing|merge(['describe what happened']) %}{% endif %}
+{% if not answers.hasPoint %}
     {% set missing = missing|merge(['mark where it happened']) %}
 {% endif %}
 {# A POINT THE AREA REFUSES is still owed until it is moved: the controller
-   reads the hidden field below and drops it once the point changes. #}
+   reads the hidden field the placement slot carries over the Where row. #}
 {% if placement and placement.refused %}
-    {% set missing = missing|merge(['a point inside ' ~ placement.areaName]) %}
+    {% set missing = missing|merge([placement.pointNeeded]) %}
 {% endif %}
 {# AND EVERY BLOCK THE CHOSEN WORD SWITCHED ON, named the way it is missed. A
-   filing arrives with none of them answered, so on first paint the line carries
-   the lot — and it carries them whether or not the fold holding them is open,
-   which is what stops a shut fold hiding a held-up filing. #}
-{% if chosen %}
+   fresh filing arrives with none of them answered, so on first paint the line
+   carries the lot — and it carries them whether or not the fold holding them is
+   open, which is what stops a shut fold hiding a held-up filing. A form that
+   came back carries only what its post still owed. #}
+{% if chosen and blocksMissing is not null %}
+    {% set missing = missing|merge(blocksMissing) %}
+{% elseif chosen %}
     {% for set in blockSets[chosen.code]|default([])|filter(set => set.gates) %}
         {% set missing = missing|merge([set.missingLabel]) %}
     {% endfor %}
@@ -64,7 +68,6 @@
 <p class="ro-promise">Only the kind, what happened, where, and each block's own first answer are needed now. The
     paperwork — contacts, ID numbers, custody references, dates and facilities — is added on the record afterwards.</p>
 
-{% if placement and placement.refused %}<input type="hidden" value="" data-need="a point inside {{ placement.areaName }}" {{ stimulus_target(controller, 'refusedPoint') }}>{% endif %}
 <div class="ro-filebar">
     {# The gate REPLACES the reassuring line rather than crowding in beside it:
        both are the same quiet mono note in the same place, and only one of them

@@ -19,6 +19,7 @@ department confined to Kilimani.
 | incident_kinds_overview | GET /areas/{kilimani}/modules/incidents/incident-kinds | `incidents.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_show | GET /areas/{kilimani}/modules/incidents/INC-0001 | `incidents.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_new | GET /areas/{kilimani}/modules/incidents/new | `incidents.record` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
+| incident_placement | GET /areas/{kilimani}/modules/incidents/placement?lat=-2.8&lng=37.1 | `incidents.record` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_kinds | GET /areas/{kilimani}/modules/incidents/kinds | `incident-vocabulary.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_lists | GET /areas/{kilimani}/modules/incidents/lists | `incident-vocabulary.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |
 | incident_widgets | GET /areas/{kilimani}/modules/incidents/widgets | `incidents.read` | sign-in | sign-in | refused | allowed | refused | refused | allowed | allowed |

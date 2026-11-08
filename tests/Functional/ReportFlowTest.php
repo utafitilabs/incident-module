@@ -1189,10 +1189,162 @@ final class ReportFlowTest extends FunctionalTestCase
     }
 
     /**
+     * A REPORT HELD BACK FOR ITS POINT COMES BACK WITH EVERY ANSWER IT CARRIED:
+     * the line, the point, when, how bad, their own words, the sub-category and
+     * every block's answers, rows and all. Moving the point or keeping it is
+     * then one press, not a report written twice.
+     */
+    public function testAWarnedReportComesBackWithEveryAnswerItCarried(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $species = $this->aSpeciesOn($area);
+        $crawler = $this->fileOutside($area, self::aFullReport($species));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertCount(1, $crawler->filter('form .banner'));
+        $form = $crawler->filter('form.ro-form');
+        self::assertSame('Lion killed four goats beyond the river', $form->filter('textarea[name="title"]')->text());
+        self::assertSame('-3.21', $form->filter('input[name="lat"]')->attr('value'));
+        self::assertSame('-28.989', $form->filter('input[name="lng"]')->attr('value'));
+        // 09:40 in Dar es Salaam is 06:40 UTC, which is the clock the field is printed in.
+        self::assertSame('2026-08-22T06:40', $form->filter('input[name="occurred_at"]')->attr('value'));
+        self::assertSame('high', $form->filter('select[name="severity"] option[selected]')->attr('value'));
+        self::assertSame('The herder saw two lions at dusk.', $form->filter('textarea[name="narrative"]')->text());
+        self::assertSame('livestock-depredation', $form->filter('input[name="subcategory"]')->attr('value'));
+
+        $chosen = $form->filter('[data-subcategory="livestock-depredation"][hidden]');
+        self::assertCount(0, $chosen, 'The chosen sub-category\'s questions are shown.');
+        $live = $form->filter('div[data-subcategory="livestock-depredation"]');
+        self::assertSame($species, $live->filter('select[name="blocks[species][species]"] option[selected]')->attr('value'));
+        self::assertSame('female', $live->filter('select[name="blocks[species][sex]"] option[selected]')->text());
+        self::assertSame('adult', $live->filter('select[name="blocks[species][age_class]"] option[selected]')->text());
+        self::assertSame('head of stock', $live->filter('select[name="blocks[counts][rows][0][quantity]"] option[selected]')->text());
+        self::assertSame('4', $live->filter('input[name="blocks[counts][rows][0][how_many]"]')->attr('value'));
+        self::assertSame('animals', $live->filter('select[name="blocks[counts][rows][1][quantity]"] option[selected]')->text());
+        self::assertSame('2', $live->filter('input[name="blocks[counts][rows][1][how_many]"]')->attr('value'));
+        self::assertSame(['1', '2'], $live->filter('.fold')->eq(1)->filter('.rep .ix')->each(static fn (Crawler $ix): string => $ix->text()));
+        self::assertSame('claimant', $live->filter('select[name="blocks[parties][rows][0][role]"] option[selected]')->text());
+        self::assertSame('A stock owner', $live->filter('input[name="blocks[parties][rows][0][name]"]')->attr('value'));
+        self::assertSame('0712 000 000', $live->filter('input[name="blocks[parties][rows][0][contact]"]')->attr('value'));
+        self::assertSame('900000', $live->filter('input[name="blocks[money][claimed]"]')->attr('value'));
+        // Nothing the filer answered is still owed on the gate's first paint.
+        self::assertSame('', trim($crawler->filter('.ro-gate')->text()));
+        self::assertNull($crawler->filter('button.ro-file')->attr('disabled'));
+    }
+
+    /** And keeping the point files that same report, marked outside the area. */
+    public function testKeepingThePointFilesTheReportAsItWasWritten(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $species = $this->aSpeciesOn($area);
+        $crawler = $this->fileOutside($area, self::aFullReport($species));
+        self::assertResponseStatusCodeSame(422);
+
+        // Posted by hand: DomCrawler keeps one field per name, and every hidden
+        // sub-category's questions share the chosen one's names.
+        $this->client->request('POST', $this->createUrl($this->uuidOf($area)), [
+            '_token' => $this->tokenFrom($crawler->html()),
+            'subcategory' => (string) $crawler->filter('input[name="subcategory"]')->attr('value'),
+            'lat' => (string) $crawler->filter('input[name="lat"]')->attr('value'),
+            'lng' => (string) $crawler->filter('input[name="lng"]')->attr('value'),
+            'placement' => (string) $crawler->filter('button[name="placement"]')->attr('value'),
+        ] + self::aFullReport($species));
+
+        self::assertResponseRedirects();
+        $incident = $this->em->getRepository(Incident::class)->findOneBy([]);
+        self::assertNotNull($incident);
+        self::assertTrue($incident->isOutsideArea());
+        self::assertSame('Lion killed four goats beyond the river', $incident->getTitle());
+        self::assertSame('The herder saw two lions at dusk.', $incident->getNarrative());
+        self::assertSame('high', $incident->getSeverity()->value);
+    }
+
+    /** Every refusal keeps what was typed, not only the one over the point. */
+    public function testARefusalForAMissingLineKeepsThePointAndTheBlocks(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $species = $this->aSpeciesOn($area);
+        $crawler = $this->fileOutside($area, ['title' => '', 'lng' => '-29.75'] + self::aFullReport($species));
+
+        self::assertResponseStatusCodeSame(422);
+        $form = $crawler->filter('form.ro-form');
+        self::assertCount(0, $form->filter('.banner'));
+        self::assertSame('-29.75', $form->filter('input[name="lng"]')->attr('value'));
+        self::assertSame('4', $form->filter('div[data-subcategory="livestock-depredation"] input[name="blocks[counts][rows][0][how_many]"]')->attr('value'));
+        self::assertSame('describe what happened', trim($crawler->filter('.ro-gate')->text()));
+    }
+
+    // ── AN INCIDENT FILED OUTSIDE SAYS SO ON ITS RECORD ─────────────────────
+
+    public function testAnIncidentFiledOutsideTheAreaSaysSoBesideItsPlace(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $this->setForTheArea($area, PlacementSettings::OUTSIDE_BOUNDARY, 'accept');
+        $this->fileOutside($area);
+        self::assertResponseRedirects();
+
+        $crawler = $this->client->followRedirect();
+
+        $zone = $crawler->filter('.factband .f')->reduce(static fn (Crawler $f): bool => 'Zone' === $f->filter('.k')->text());
+        self::assertSame('filed outside Kilimani', trim($zone->filter('.v em')->text()));
+        self::assertStringContainsString('filed outside Kilimani', $crawler->filter('#where .tab')->text());
+    }
+
+    public function testAnIncidentFiledInsideSaysNothingOfIt(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $this->fileOutside($area, ['lng' => '-29.75']);
+        self::assertResponseRedirects();
+
+        $crawler = $this->client->followRedirect();
+
+        self::assertStringNotContainsString('filed outside', $crawler->filter('.factband')->text());
+        self::assertStringNotContainsString('filed outside', $crawler->filter('#where .tab')->text());
+    }
+
+    /**
+     * A report with every shared answer and two count rows, a party with a
+     * contact, and the figure.
+     *
+     * @return array<string, mixed>
+     */
+    private static function aFullReport(string $species): array
+    {
+        return [
+            'title' => 'Lion killed four goats beyond the river',
+            'occurred_at' => '2026-08-22T09:40',
+            'occurred_at_zone' => 'Africa/Dar_es_Salaam',
+            'severity' => 'high',
+            'narrative' => 'The herder saw two lions at dusk.',
+            'blocks' => [
+                'species' => ['species' => $species, 'sex' => 'female', 'age_class' => 'adult'],
+                'counts' => ['rows' => [
+                    ['quantity' => 'head of stock', 'how_many' => '4'],
+                    ['quantity' => 'animals', 'how_many' => '2'],
+                ]],
+                'parties' => ['rows' => [['role' => 'claimant', 'name' => 'A stock owner', 'contact' => '0712 000 000']]],
+                'money' => ['claimed' => '900000'],
+            ],
+        ];
+    }
+
+    /** A word the area's own species list offers, as the form's select keys it. */
+    private function aSpeciesOn(AreaOfInterest $area): string
+    {
+        $this->client->loginUser($this->aReporter());
+        $values = $this->client->request('GET', $this->reportUrl($this->uuidOf($area)))
+            ->filter('select[name="blocks[species][species]"] option')
+            ->each(static fn (Crawler $option): string => (string) $option->attr('value'));
+        $words = array_values(array_filter($values, static fn (string $value): bool => '' !== $value && 'other' !== $value));
+
+        return $words[0] ?? 'other';
+    }
+
+    /**
      * Files a report whose point is 0.011° east of the area's boundary at
      * 3.21° S, about 1.2 km beyond it.
      *
-     * @param array<string, string> $overrides
+     * @param array<string, mixed> $overrides
      */
     private function fileOutside(AreaOfInterest $area, array $overrides = []): Crawler
     {

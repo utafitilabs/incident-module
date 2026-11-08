@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+ * A REPORT THAT COMES BACK KEEPS EVERYTHING IT WAS POSTED WITH — the line, the point, when, how bad, their own words, the sub-category and every block's answers, each repeated row drawn again (`Model/ReportAnswers`). Any refusal: the point outside the area, or a missing answer.
+ * THE BANNER IS THERE AS SOON AS THE POINT IS OUTSIDE: the form asks `GET /areas/{uuid}/modules/incidents/placement?lat=&lng=` (`incident_placement`, behind `incidents.record`) whenever the point changes. The JSON says inside or outside, the metres beyond, the area's setting, its name and the zone, and carries the banner and the Where note drawn by the same partials the form renders (`report/_placement`, `report/_where`). The Where row reads "outside <area> · no zone", or the zone a point inside is in; under Refuse File stays shut with "a point inside <area>" owed. A form arriving with a point is judged on its first paint. The server judges the point again on filing.
+ * AN INCIDENT FILED OUTSIDE ITS AREA SAYS SO on its record: "filed outside <area>" under the Zone fact and on the Where card's tab.
+
  * A REPORT PLACED OUTSIDE ITS AREA'S BOUNDARY (Settings › Modules › Incidents › Placement, per area): Accept, Warn (the default) or Refuse, and "Inside if within" (500 m, 0–10000). Beyond the boundary by more than that, the web form under Warn holds the report with a banner — "Move the point" / "File it outside the area", the second posting `placement=outside` — and under Refuse offers only Move the point and keeps "a point inside <area>" owed until the point moves. Every filing is judged and marked (`incident.outside_area`, migration `Version20261108120000`); a report from a phone is always filed and marked. Needs core 0.3's choice meanings, setting notes and the banner's submit-button door.
 
  * No sheet the module ships gives a house fold a transition of its own (`tests/Unit/Template/FoldConformanceTest`).

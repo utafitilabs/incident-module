@@ -32,11 +32,13 @@
    zone is the shell's problem the day a second module has one. #}
 {% block incident_page %}
     {{ include('@UhifadhiIncident/report/_page.html.twig', {
-        controller: '@uhifadhi/incident-module/incident-report',
+        controller: constant('Uhifadhi\\Incident\\Controller\\IncidentReportController::STIMULUS_CONTROLLER'),
         momentController: '@uhifadhi/incident-module/incident-local-moment',
         area: area,
         kinds: kinds,
         prefill: prefill,
+        answers: answers,
+        blocksMissing: blocksMissing,
         chosen: chosen,
         csrfToken: csrfToken,
         errors: errors,
@@ -45,7 +47,8 @@
         blockSets: blockSets,
         checklists: checklists,
         areaLists: areaLists,
-        placement: placement ?? null,
-        placementKept: placementKept ?? false,
+        placement: placement,
+        placementKept: placementKept,
+        placementUrl: placementUrl,
     }, with_context: false) }}
 {% endblock %}

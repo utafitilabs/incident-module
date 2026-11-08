@@ -35,6 +35,15 @@ final class IncidentPlacementServiceTest extends IntegrationTestCase
 
         self::assertFalse($placement->outside);
         self::assertSame(0.0, $placement->metres);
+        self::assertNull($placement->zoneName, 'An area with no zones drawn places nothing in one');
+    }
+
+    public function testAPointInAZoneNamesIt(): void
+    {
+        $area = $this->anArea();
+        $this->aZone($area, 'Riverbend');
+
+        self::assertSame('Riverbend', $this->placements()->judge($area, self::point(-29.75, -3.21))->zoneName);
     }
 
     public function testAPointBeyondTheBoundaryIsOutsideByItsDistance(): void

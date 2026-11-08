@@ -221,6 +221,7 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('incident.boundary_distance'),
             service(SettingsReaderInterface::class),
+            service('incident.zone_locator'),
         ]);
 
     $services->set('incident.report', IncidentReportService::class)

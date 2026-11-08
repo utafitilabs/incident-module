@@ -1,0 +1,28 @@
+{# WHERE THE POINT LIES AGAINST THE AREA, over the Where row: drawn into the
+   form on every render, and fetched from incident_placement into the same slot
+   whenever the point changes, so both ways read this one partial.
+
+   OUTSIDE THE AREA'S BOUNDARY, by more than the area's "Inside if within",
+   is said before anything is filed. Under Warn the filer may keep the point
+   ("File it outside the area" files the form with it, marked outside the
+   area); under Refuse the form will not file it until the point is inside, and
+   the hidden field names that point among what the gate still owes. A filer
+   who already kept the point carries that choice; a moved point is judged
+   afresh and asks again.
+
+   Parameters: controller, placement, placementKept
+   ========================================================================== #}
+{%- if placement and (placement.needsConsent and not placementKept or placement.refused) %}
+    {{ include('@Shell/_banner.html.twig', {
+        title: 'This point is outside ' ~ placement.areaName ~ ', ' ~ placement.distance ~ ' beyond its boundary.',
+        text: placement.refused ? '— This area files reports inside its boundary only.' : '— Move it inside, or file it as outside the area.',
+        actions: placement.refused
+            ? {'Move the point': '#report-lat'}
+            : {'Move the point': '#report-lat', 'File it outside the area': {button: {name: 'placement', value: 'outside'}}},
+    }, with_context: false) }}
+    {%- if placement.refused %}
+    <input type="hidden" value="" data-need="{{ placement.pointNeeded }}" {{ stimulus_target(controller, 'refusedPoint') }}>
+    {%- endif %}
+{%- elseif placement and placement.needsConsent and placementKept %}
+    <input type="hidden" name="placement" value="outside">
+{%- endif %}
