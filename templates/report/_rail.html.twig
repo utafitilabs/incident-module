@@ -23,7 +23,7 @@
    again, and the form keeps its width — the rail is extra help, never a reason for
    the form to get narrower (see incidents.css).
 
-   Parameters: controller, kinds, chosen, prefill, answers, blocksMissing, checklists
+   Parameters: controller, kinds, chosen, prefill, answers, blocksMissing, checklists, placement
    ========================================================================== #}
 <aside class="i-rail">
     {% if prefill.hasProvenance %}
@@ -38,5 +38,6 @@
         answers: answers,
         blocksMissing: blocksMissing,
         checklists: checklists,
+        placement: placement,
     }, with_context: false) }}
 </aside>

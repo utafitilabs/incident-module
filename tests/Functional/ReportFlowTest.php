@@ -1169,6 +1169,25 @@ final class ReportFlowTest extends FunctionalTestCase
         self::assertSame(0, $this->em->getRepository(Incident::class)->count([]));
     }
 
+    /**
+     * REFUSE: the rail counts the point as still needed, as the gate does —
+     * every other answer is in, so the place is the one row owed.
+     */
+    public function testUnderRefuseTheRailCountsThePointAsStillNeeded(): void
+    {
+        $area = $this->anAreaWithKinds('Kilimani');
+        $this->setForTheArea($area, PlacementSettings::OUTSIDE_BOUNDARY, 'refuse');
+        $crawler = $this->fileOutside($area);
+
+        self::assertResponseStatusCodeSame(422);
+        $shown = $crawler->filter('[data-incident-asks="livestock-depredation"]');
+        self::assertSame('1 of 7 still needed', $shown->filter('.rr-prog b')->text());
+        $where = $shown->filter('.rr-q[data-incident-report-need="mark where it happened"]');
+        self::assertStringContainsString('need', (string) $where->attr('class'));
+        self::assertSame('1', trim($where->filter('i')->text()));
+        self::assertSame('a point inside Kilimani', $crawler->filter('.ro-gate')->text());
+    }
+
     public function testAnAreaThatAcceptsFilesItMarkedOutside(): void
     {
         $area = $this->anAreaWithKinds('Kilimani');

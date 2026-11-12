@@ -56,6 +56,9 @@ export default class extends Controller {
     /** The attribute a rail row carries the gate's own missing-answer label on. */
     static NEED = 'data-incident-report-need';
 
+    /** The gate's word for the place, and the rail's Where row's. */
+    static WHERE = 'mark where it happened';
+
     connect() {
         this.asked = 0;
         this.gate();
@@ -203,7 +206,7 @@ export default class extends Controller {
             missing.push('describe what happened');
         }
         if (!this.hasPosition()) {
-            missing.push('mark where it happened');
+            missing.push(this.constructor.WHERE);
         }
         missing.push(...this.blocksMissing());
         // A POINT THE AREA REFUSES stands until the area's answer for a moved
@@ -251,11 +254,15 @@ export default class extends Controller {
             return;
         }
 
+        // A POINT THE AREA REFUSES is the place, still owed: the gate names it
+        // by the area, and the Where row owes it until a moved point's answer
+        // takes the refusal away.
+        const isOwed = (need) => missing.includes(need) || (this.constructor.WHERE === need && this.hasRefusedPointTarget);
         const rows = [...shown.querySelectorAll('.rr-q')];
         let owed = 0;
         for (const row of rows) {
             const need = row.getAttribute(this.constructor.NEED);
-            const done = !missing.includes(need);
+            const done = !isOwed(need);
             row.classList.toggle('done', done);
             row.classList.toggle('need', !done);
 
@@ -275,7 +282,7 @@ export default class extends Controller {
         }
 
         const total = rows.filter((row) => row.hasAttribute(this.constructor.NEED)).length;
-        const still = rows.filter((row) => missing.includes(row.getAttribute(this.constructor.NEED))).length;
+        const still = rows.filter((row) => row.hasAttribute(this.constructor.NEED) && isOwed(row.getAttribute(this.constructor.NEED))).length;
         const progress = shown.querySelector('.rr-prog');
         if (!progress || 0 === total) {
             return;

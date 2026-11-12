@@ -63,6 +63,22 @@ final class ReportPlacementSeamTest extends TestCase
         self::assertStringContainsString('placement.pointNeeded', self::read('templates/report/_gate.html.twig'));
     }
 
+    /**
+     * AND THE RAIL OWES IT ON ITS WHERE ROW, on first paint and whenever the
+     * gate runs again: the refused point is the place, still needed, until a
+     * moved point's answer takes the slot's field away.
+     */
+    public function testARefusedPointLeavesTheRailsWhereRowOwed(): void
+    {
+        self::assertStringContainsString('placement: placement,', self::read('templates/report/_rail.html.twig'));
+        self::assertStringContainsString('placeDone = answers.hasPoint and not (placement and placement.refused)', self::read('templates/report/_checklist.html.twig'));
+
+        $script = self::read('assets/controllers/incident_report_controller.js');
+        self::assertStringContainsString("static WHERE = 'mark where it happened';", $script);
+        self::assertStringContainsString('(this.constructor.WHERE === need && this.hasRefusedPointTarget)', $script);
+        self::assertSame(2, substr_count($script, 'this.constructor.WHERE'), 'The gate and the rail name the Where row by one constant.');
+    }
+
     private static function read(string $path): string
     {
         return (string) file_get_contents(\dirname(__DIR__, 3).'/'.$path);

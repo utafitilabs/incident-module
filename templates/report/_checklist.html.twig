@@ -29,14 +29,15 @@
    the line and the place exactly as it holds it on a block, so the rail counts
    them: a progress line that left one out would disagree with the footer by one.
 
-   Parameters: controller, kinds, chosen, prefill, answers, blocksMissing, checklists
+   Parameters: controller, kinds, chosen, prefill, answers, blocksMissing, checklists, placement
    ========================================================================== #}
 {# WHAT THE GATE IS MISSING ON FIRST PAINT, computed exactly as
    @UhifadhiIncident/report/_gate.html.twig computes it — a line the source record
    already wrote counts as filled, and so does a place that came with it; on a
    form that came back, what was posted. #}
 {% set lineDone = answers.title|trim is not empty %}
-{% set placeDone = answers.hasPoint %}
+{# A point the area refuses is the place still owed, as the gate owes it. #}
+{% set placeDone = answers.hasPoint and not (placement and placement.refused) %}
 
 {% for kind in kinds %}
     {% for subcategory in kind.subcategories %}
