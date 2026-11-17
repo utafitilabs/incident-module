@@ -45,9 +45,8 @@ final class IncidentAge
             return \sprintf('%d %s', $hours, 1 === $hours ? 'hour' : 'hours');
         }
 
-        $days = intdiv($hours, 24);
-
-        return \sprintf('%d %s', $days, 1 === $days ? 'day' : 'days');
+        // From HOURS_BEFORE_DAYS on, an age is at least two days: never "1 day".
+        return \sprintf('%d days', intdiv($hours, 24));
     }
 
     /**
